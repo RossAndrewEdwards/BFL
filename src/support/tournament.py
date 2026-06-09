@@ -263,7 +263,7 @@ def fetch_buhurt_uk_tournaments(
 
 def fallback_buhurt_uk_tournaments(fallback_events=None, parse_event_date_range_fn=None):
     if fallback_events is None:
-        from app import FALLBACK_BUHURT_UK_TOURNAMENTS
+        from src.app import FALLBACK_BUHURT_UK_TOURNAMENTS
         fallback_events = FALLBACK_BUHURT_UK_TOURNAMENTS
     client = BuhurtCalendarClient(fallback_events=fallback_events)
     return client._load_fallback_events()

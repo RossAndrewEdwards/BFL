@@ -115,7 +115,7 @@ def _team_to_dict(t, settings):
 
 def fighter_aggregates(conn, *, request_cached_fn, scoped_league_id_fn):
     def load():
-        from roster_engine import RosterRankingsEngine
+        from src.engine.roster import RosterRankingsEngine
         league_id = scoped_league_id_fn(conn)
         leaderboard = RosterRankingsEngine.get_fighter_leaderboard(conn, league_id)
         return {
@@ -141,7 +141,7 @@ def fighter_aggregates(conn, *, request_cached_fn, scoped_league_id_fn):
 
 def fighter_ownership_rates(conn, *, request_cached_fn, scoped_league_id_fn):
     def load():
-        from roster_engine import RosterRankingsEngine
+        from src.engine.roster import RosterRankingsEngine
         league_id = scoped_league_id_fn(conn)
         leaderboard = RosterRankingsEngine.get_fighter_leaderboard(conn, league_id)
         return {f.fighter_id: f.ownership_percent for f in leaderboard}
@@ -216,7 +216,7 @@ def raw_fighter_stats(
     fighter_result_extra_keys,
 ):
     def load():
-        from roster_engine import RosterRankingsEngine
+        from src.engine.roster import RosterRankingsEngine
         league_id = scoped_league_id_fn(conn)
         leaderboard = RosterRankingsEngine.get_fighter_leaderboard(conn, league_id)
         return [_fighter_to_dict(f) for f in leaderboard]
@@ -289,7 +289,7 @@ def ownership_next_costs(
     scoped_league_id_fn,
 ):
     def load():
-        from roster_engine import RosterRankingsEngine
+        from src.engine.roster import RosterRankingsEngine
         league_id = scoped_league_id_fn(conn)
         settings = settings_dict_fn(conn)
         return RosterRankingsEngine._calculate_next_season_costs(conn, league_id, settings)
@@ -328,8 +328,8 @@ def team_rows(
     event_points_fn,
 ):
     def load():
-        from roster_engine import RosterRankingsEngine
-        import auth_support
+        from src.engine.roster import RosterRankingsEngine
+        from src.support import auth as auth_support
         league_id = auth_support.scoped_league_id(conn)
         standings = RosterRankingsEngine.get_team_standings(conn, league_id)
         settings = settings_dict_fn(conn)

@@ -1,9 +1,9 @@
 import re
-from exceptions import ValidationError
+from src.exceptions import ValidationError
 
 
 def team_builder_context(conn):
-    import team_support
+    from src.support import team as team_support
     return team_support.team_builder_context(conn)
 
 
@@ -21,7 +21,7 @@ def parse_int_field_from_value(name, raw, minimum=None):
 def valid_team_id(conn, team_id):
     if team_id is None:
         return True
-    from auth_support import scoped_league_id
+    from src.support.auth import scoped_league_id
     league_id = scoped_league_id()
     return conn.execute(
         "SELECT 1 FROM fantasy_teams WHERE id=? AND (? IS NULL OR league_id=?)",
@@ -32,7 +32,7 @@ def valid_team_id(conn, team_id):
 def valid_player_user_id(conn, user_id):
     if user_id is None:
         return True
-    from auth_support import scoped_league_id
+    from src.support.auth import scoped_league_id
     league_id = scoped_league_id()
     if league_id is None:
         return conn.execute(
@@ -53,7 +53,7 @@ def valid_player_user_id(conn, user_id):
 
 
 def player_manager_slot_usage(conn, user_id, exclude_team_id=None):
-    import team_support
+    from src.support import team as team_support
     return team_support.player_manager_slot_usage(conn, user_id, exclude_team_id)
 
 
@@ -116,7 +116,7 @@ def team_fighter_ids(conn, team_id):
 
 
 def teams_for_player(conn, user_id):
-    from auth_support import scoped_league_id
+    from src.support.auth import scoped_league_id
     league_id = scoped_league_id()
     return conn.execute(
         """
@@ -131,8 +131,8 @@ def teams_for_player(conn, user_id):
 
 
 def player_rows(conn):
-    from app import request_cached
-    from auth_support import scoped_league_id
+    from src.app import request_cached
+    from src.support.auth import scoped_league_id
     scoped_league_id_val = scoped_league_id()
     return request_cached(
         "player_rows",
@@ -194,5 +194,5 @@ def selected_fighter_ids_from_form():
 
 
 def team_form_values(conn, player_user_id_override=None):
-    import team_support
+    from src.support import team as team_support
     return team_support.team_form_values(conn, player_user_id_override)

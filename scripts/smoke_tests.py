@@ -9,9 +9,6 @@ from app import app, init_db
 
 PUBLIC_ROUTES = [
     "/",
-    "/fighters",
-    "/teams",
-    "/teams/compare",
     "/rules",
 ]
 
@@ -56,28 +53,28 @@ def main():
                 failures.append(str(exc))
 
         response = client.get("/leaderboard")
-        if response.status_code == 302 and "/fighters" in response.headers.get("Location", ""):
-            print("OK legacy redirect: /leaderboard -> /fighters")
+        if response.status_code == 302 and "/login" in response.headers.get("Location", ""):
+            print("OK legacy redirect: /leaderboard -> /login")
         else:
-            failures.append("/leaderboard did not redirect to /fighters")
+            failures.append("/leaderboard did not redirect to /login")
 
         response = client.get("/")
-        if response.status_code == 200 and b"Buhurt UK Calendar" in response.data and b"Featured Fighter" in response.data:
+        if response.status_code == 200 and b"Buhurt UK Calendar" in response.data and b"Members Only" in response.data:
             print("OK landing page: /")
         else:
             failures.append("/ did not render the landing page")
 
-        response = client.get("/teams")
-        if b"Upcoming Tournaments" not in response.data and b"League Updates" not in response.data:
-            print("OK focused teams page")
-        else:
-            failures.append("Public teams page included global updates or tournament clutter")
-
         try:
             login_admin(client)
+            
+            response = client.get("/teams")
+            assert_ok(response.status_code == 200, f"/teams returned {response.status_code}")
+            assert_ok(b"Upcoming Tournaments" not in response.data and b"League Updates" not in response.data, "Teams page included global updates or tournament clutter")
+            print("OK focused teams page")
+            
             response = client.get("/admin/teams/new")
             assert_ok(response.status_code == 200, f"/admin/teams/new returned {response.status_code}")
-            assert_ok(b"Live Team Builder" in response.data, "Team builder page did not render the live builder")
+            assert_ok(b"Team Builder Wizard" in response.data, "Team builder page did not render the builder wizard")
             assert_ok(b"selected-fighter-grid" in response.data, "Team builder comparison grid is missing")
             print("OK admin route: /admin/teams/new")
         except AssertionError as exc:

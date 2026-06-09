@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from exceptions import QuotaExceededError
+from src.exceptions import QuotaExceededError
 
 
 class LeagueQuotaManager:

@@ -1,8 +1,8 @@
 def public_event_fighter_display(fighter):
-    from app import public_fighter_display
+    from src.app import public_fighter_display
     display = public_fighter_display({"rank": fighter.get("event_rank"), **fighter}, context="event")
     
-    from app import public_fighter_spotlight_label
+    from src.app import public_fighter_spotlight_label
     return {
         "spotlight_label": public_fighter_spotlight_label({"rank": fighter.get("event_rank")}, context="leaderboard"),
         "summary": display["summary"],
@@ -11,7 +11,7 @@ def public_event_fighter_display(fighter):
 
 
 def latest_event_results_payload(conn, league_id_override=None):
-    from app import request_cached
+    from src.app import request_cached
     
     def _movement(previous_rank, current_rank):
         if not current_rank:
@@ -51,7 +51,7 @@ def latest_event_results_payload(conn, league_id_override=None):
         }
 
     def load():
-        from auth_support import scoped_league_id
+        from src.support.auth import scoped_league_id
         league_id = league_id_override if league_id_override is not None else scoped_league_id()
         event = conn.execute(
             """
@@ -74,7 +74,7 @@ def latest_event_results_payload(conn, league_id_override=None):
             return None
 
         event = dict(event)
-        from app import rules_dict, leaderboard_rows, event_points, tier_theme, PUBLIC_PROFILE_STAT_ORDER, event_summary_text
+        from src.app import rules_dict, leaderboard_rows, event_points, tier_theme, PUBLIC_PROFILE_STAT_ORDER, event_summary_text
         
         rules = rules_dict(conn)
         leaderboard_lookup = {row["id"]: row for row in leaderboard_rows(conn)}
@@ -127,7 +127,7 @@ def latest_event_results_payload(conn, league_id_override=None):
             row["movement"] = _movement(previous_fighter_ranks.get(row["fighter_id"]), current_rank)
 
         team_entries = []
-        from app import team_rows
+        from src.app import team_rows
         all_teams = team_rows(conn)
         fighter_points = {row["fighter_id"]: row["event_points"] for row in fighter_rows}
         for team in all_teams:
@@ -183,7 +183,7 @@ def latest_event_results_payload(conn, league_id_override=None):
 
 
 def compare_team_payload(conn, team_a_id, team_b_id):
-    from app import team_rows, leaderboard_rows
+    from src.app import team_rows, leaderboard_rows
     rows = {row["id"]: row for row in team_rows(conn)}
     team_a = rows.get(team_a_id)
     team_b = rows.get(team_b_id)
@@ -206,8 +206,8 @@ def compare_team_payload(conn, team_a_id, team_b_id):
 
 
 def home_payload(conn, landing_images):
-    from app import upcoming_buhurt_uk_tournaments, latest_event_results_payload
-    from auth_support import effective_league_id
+    from src.app import upcoming_buhurt_uk_tournaments, latest_event_results_payload
+    from src.support.auth import effective_league_id
     tournaments = upcoming_buhurt_uk_tournaments(conn)
     latest_event = latest_event_results_payload(conn, league_id_override=effective_league_id())
     return {

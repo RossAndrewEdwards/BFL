@@ -2,9 +2,9 @@ import sqlite3
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 
-from exceptions import ValidationError
-import scoring_support
-from ui_support import tier_theme
+from src.exceptions import ValidationError
+from src.support import scoring as scoring_support
+from src.support.ui import tier_theme
 
 # =====================================================================
 # Constants & Defaults

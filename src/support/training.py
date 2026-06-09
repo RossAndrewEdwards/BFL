@@ -1,8 +1,8 @@
 import datetime
 from typing import List, Dict, Any, Tuple, Optional
-from exceptions import ValidationError
-from ops_support import log_audit
-from season_support import require_active_season_editable
+from src.exceptions import ValidationError
+from src.support.ops import log_audit
+from src.support.season import require_active_season_editable
 
 
 class TrainingHonoursEngine:
