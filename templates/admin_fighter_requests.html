@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_table_toolbar.html" import render_table_toolbar %}
+{% block content %}
+<div data-filter-region>
+  <div class="section-head compact-section-head">
+    <div>
+      <h1>Fighter Requests</h1>
+      <p class="meta">Review pending player-submitted fighter edits and new fighter requests for the current league scope.</p>
+    </div>
+  </div>
+  {{ render_table_toolbar(toolbar) }}
+
+  {% for row in rows %}
+  <section class="panel" style="margin-top: 16px;">
+    <div class="section-head compact-section-head">
+      <div>
+        <h2>{{ row.request_target }}</h2>
+        <p class="meta">{{ row.request_type|title }} request from {{ row.requester_name }}{% if row.league_name %} · {{ row.league_name }}{% endif %}</p>
+      </div>
+      <div class="pill-row">
+        <span class="pill brand">{{ row.status|title }}</span>
+        {% if row.reviewed_at %}<span class="pill">Reviewed {{ row.reviewed_at[:16].replace('T', ' ') }}</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="detail-list">
+      {% for key, value in row.payload.items() %}
+        {% if value not in ['', None] %}
+        <div class="detail-row"><span>{{ key.replace('_', ' ').title() }}</span><strong>{{ value }}</strong></div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if row.status == 'pending' %}
+    <div class="split-grid two-up" style="margin-top: 16px;">
+      <form method="post" action="{{ url_for('admin_fighter_request_approve', request_id=row.id) }}" class="panel">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+        <label>Review Notes <textarea name="review_notes" rows="3"></textarea></label>
+        <button type="submit">Approve Request</button>
+      </form>
+      <form method="post" action="{{ url_for('admin_fighter_request_deny', request_id=row.id) }}" class="panel">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+        <label>Review Notes <textarea name="review_notes" rows="3"></textarea></label>
+        <button type="submit" class="button secondary">Deny Request</button>
+      </form>
+    </div>
+    {% elif row.review_notes %}
+    <p class="meta" style="margin-top: 16px;"><strong>Review notes.</strong> {{ row.review_notes }}</p>
+    {% endif %}
+  </section>
+  {% else %}
+  <section class="panel" style="margin-top: 16px;">
+    <h2>No fighter requests yet</h2>
+    <p class="meta">Player-submitted fighter edits and new fighter requests will appear here.</p>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

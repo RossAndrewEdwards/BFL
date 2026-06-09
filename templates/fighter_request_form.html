@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <div class="section-head compact-section-head">
+    <div>
+      <h1>{{ 'Request Fighter Update' if mode == 'edit' else 'Request New Fighter' }}</h1>
+      <p class="meta">
+        {% if mode == 'edit' %}
+        Submit suggested profile changes for {{ fighter.name }} in {{ league.name }}. A league admin will review the request before anything changes.
+        {% else %}
+        Suggest a new fighter for {{ league.name }}. A league admin will review the request before the fighter is added.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <form method="post" class="form-grid two-col" style="margin-top: 20px;">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    {% if mode == 'create' %}
+    <label>Name <input name="name" value="{{ values.name or '' }}" required></label>
+    {% endif %}
+    <label>Nickname <input name="nickname" value="{{ values.nickname or '' }}"></label>
+    <label>Age <input type="number" min="0" name="age" value="{{ values.age or '' }}"></label>
+    <label>Joined Year <input type="number" min="0" name="joined_year" value="{{ values.joined_year or '' }}"></label>
+    <label>Height (m) <input name="height" value="{{ values.height or '' }}"></label>
+    <label>Weight (kg) <input name="weight" value="{{ values.weight or '' }}"></label>
+    <label>Fighting Style <input name="fighting_style" value="{{ values.fighting_style or '' }}"></label>
+    <label>Preferred Role <input name="preferred_role" value="{{ values.preferred_role or '' }}"></label>
+    <label>Role or Weapon <input name="role_or_weapon" value="{{ values.role_or_weapon or '' }}"></label>
+    <label>Known For <input name="known_for" value="{{ values.known_for or '' }}"></label>
+    <label class="full">Why Buhurt <textarea name="why_buhurt">{{ values.why_buhurt or '' }}</textarea></label>
+    <label class="full">Description <textarea name="bio">{{ values.bio or '' }}</textarea></label>
+    <label class="full">Additional Notes <textarea name="notes">{{ values.notes or '' }}</textarea></label>
+    <button type="submit">{{ 'Submit Update Request' if mode == 'edit' else 'Submit New Fighter Request' }}</button>
+  </form>
+</section>
+{% endblock %}

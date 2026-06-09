@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "_card_templates.html" import render_fighter_card %}
+{% from "_image_attribution.html" import image_attribution %}
+{% from "_tier_helpers.html" import render_tier_badge, render_tier_legend %}
+{% block content %}
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Team Profile</span>
+      <h1>{{ team.team_name }}</h1>
+      <div class="pill-row">
+        <span class="pill {{ 'success' if team.status == 'VALID' else 'warning' }}">{{ team.status }}</span>
+        <span class="pill">Rank {{ team.rank or 'Unranked' }}</span>
+        <span class="pill">Roster {{ team.member_count }}</span>
+        <a class="pill brand" href="{{ url_for('shared_team_detail', token=share_token) }}">Public Share Page</a>
+      </div>
+    </div>
+    <div class="hero-meta">
+      <img class="team-hero-image" src="{{ url_for('static', filename=team.image_path) if team.image_path else default_skins.team.url }}" alt="{{ team.team_name }} team image">
+      {{ image_attribution(team.image_credit, team.image_source_url, default_skins.team.credit if not team.image_path else '', default_skins.team.source if not team.image_path else '') }}
+      <div class="summary-band">
+        <div class="mini-stat"><span>Points</span><strong>{{ team.points }}</strong></div>
+        <div class="mini-stat"><span>Glory</span><strong>{{ team.trait_totals[0].value }}</strong></div>
+        <div class="mini-stat"><span>Synergy</span><strong>{{ team.trait_totals[5].value }}</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="profile-grid" style="margin-top: 24px;">
+  <article class="detail-card dark">
+    <h2>Team Traits</h2>
+    <div class="stats-grid">
+      {% for stat in team.trait_totals %}
+      <div><span>{{ stat.label }}</span><strong>{{ stat.value }}</strong></div>
+      {% endfor %}
+    </div>
+  </article>
+  <aside class="detail-card">
+    <h2>Manager Notes</h2>
+      <div class="detail-list" style="margin-top: 18px;">
+      <div class="detail-row"><span>Player</span><strong>{{ team.player_name or 'Unassigned' }}</strong></div>
+      <div class="detail-row"><span>Manager</span><strong>{{ team.manager }}</strong></div>
+      <div class="detail-row"><span>Status</span><strong>{{ team.status }}</strong></div>
+      <div class="detail-row"><span>Rank</span><strong>{{ team.rank or '--' }}</strong></div>
+      <div class="detail-row"><span>Roster size</span><strong>{{ team.member_count }}</strong></div>
+      <div class="detail-row"><span>Total points</span><strong>{{ team.points }}</strong></div>
+    </div>
+  </aside>
+</section>
+
+<div class="section-head">
+  <div>
+    <h2>Event Gains</h2>
+    <p>Track how this team has picked up points from each scored event across the season.</p>
+  </div>
+</div>
+
+<section class="card-grid" style="margin-top: 18px;">
+  {% if team.event_history %}
+    {% for event in team.event_history %}
+    <article class="panel">
+      <div class="section-head compact-section-head">
+        <div>
+          <h3>{{ event.event_name }}</h3>
+          <p class="meta">{{ event.event_date }}</p>
+        </div>
+        <div class="rank-badge is-muted">+{{ event.event_points }}</div>
+      </div>
+      <div class="pill-row">
+        {% for fighter in event.fighters %}
+        <span class="pill">{{ fighter.fighter_name }} +{{ fighter.event_points }}</span>
+        {% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  {% else %}
+  <article class="panel empty-state-card">
+    <h3>No scored events yet.</h3>
+    <p class="meta">Event-by-event gains will appear here after this team's fighters receive scored event results.</p>
+  </article>
+  {% endif %}
+</section>
+
+<div class="section-head">
+  <div>
+    <h2>Roster Breakdown</h2>
+  </div>
+</div>
+
+{{ render_tier_legend() }}
+
+<section class="roster-grid fighter-card-track-grid">
+  {% for f in team.fighters %}
+  {% set lf = leaderboard[f.id] %}
+  {{ render_fighter_card(
+    lf,
+    public_fighter_display(lf, 'leaderboard'),
+    url_for('fighter_detail', fighter_id=f.id),
+    default_skins,
+    'League Rank #' ~ lf.rank
+  ) }}
+  {% endfor %}
+</section>
+{% endblock %}

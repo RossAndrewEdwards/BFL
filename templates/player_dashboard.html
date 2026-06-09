@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% from "_card_templates.html" import render_team_card %}
+{% block content %}
+<section class="hero compact-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Player Dashboard</span>
+      <h1>Welcome back, {{ player.display_name }}</h1>
+      <p>Your active league dashboard keeps your team, the next live event, and your quickest actions together in one place.</p>
+      {% if player_league %}
+      <p class="meta">League: {{ player_league.name }}</p>
+      {% endif %}
+      <div class="hero-actions" style="margin-top: 16px;">
+        <a class="button" href="{{ url_for('my_team') }}">Open My Team</a>
+        <a class="button secondary" href="{{ url_for('leaderboard') }}">View Leaderboard</a>
+      </div>
+    </div>
+    <div class="hero-meta">
+      <div class="summary-band">
+        <div class="mini-stat"><span>Team rank</span><strong>{{ '#' ~ team.rank if team and team.rank else 'Unranked' }}</strong></div>
+        <div class="mini-stat"><span>Total points</span><strong>{{ team.points if team else 0 }}</strong></div>
+        <div class="mini-stat"><span>Latest gain</span><strong>{% if own_latest_gain %}+{{ own_latest_gain.event_points }}{% else %}0{% endif %}</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="landing-feature-grid player-dashboard-grid" style="margin-top: 22px;">
+  <article class="landing-panel player-dashboard-spotlight">
+    <div class="section-head compact-head">
+      <div>
+        <span class="eyebrow-chip">Next Live Event</span>
+        <h2>{% if next_tournament %}{{ next_tournament.name }}{% else %}No live event listed yet{% endif %}</h2>
+        <p class="meta">{% if next_tournament %}{{ next_tournament.date }} · {{ next_tournament.location }}{% else %}The shared Buhurt calendar has no upcoming item right now.{% endif %}</p>
+      </div>
+      {% if next_tournament %}
+      <a class="button secondary" href="{{ next_tournament.url }}" target="_blank" rel="noopener">Open Event</a>
+      {% endif %}
+    </div>
+    <div class="summary-band">
+      <div class="mini-stat"><span>Roster deadline</span><strong>{{ deadline_label }}</strong></div>
+      <div class="mini-stat"><span>Context</span><strong>{{ deadline_context }}</strong></div>
+    </div>
+  </article>
+
+  <article class="landing-panel">
+    <div class="section-head compact-head">
+      <div>
+        <span class="eyebrow-chip">Next Actions</span>
+        <h2>Stay on top of your league</h2>
+      </div>
+    </div>
+    <div class="shortcut-list">
+      <a href="{{ url_for('my_team') }}"><strong>Review My Team</strong><span>Check rank, roster, and event gains.</span></a>
+      <a href="{{ url_for('leaderboard') }}"><strong>Track the Leaderboard</strong><span>See where your team and league fighters stand.</span></a>
+      <a href="{{ url_for('public_event_results') }}"><strong>Open Event Results</strong><span>Catch up on the latest scored event and team swings.</span></a>
+      <a href="{{ url_for('my_notifications') }}"><strong>My Notifications</strong><span>Review fighter-request updates and league notices.</span></a>
+    </div>
+  </article>
+</section>
+
+<section class="landing-feature-grid player-dashboard-grid" style="margin-top: 18px;">
+  <article class="landing-panel">
+    <div class="section-head compact-head">
+      <div>
+        <span class="eyebrow-chip">My Team Snapshot</span>
+        <h2>{% if team %}{{ team.team_name }}{% else %}No team yet{% endif %}</h2>
+      </div>
+      {% if not team and slot_usage.remaining > 0 %}
+      <a class="button secondary" href="{{ url_for('player_team_new') }}">Create Team</a>
+      {% endif %}
+    </div>
+    {% if team %}
+      {{ render_team_card(
+        team,
+        url_for('team_detail', team_id=team.id),
+        default_skins,
+        'Player ' ~ (team.player_name or player.display_name) ~ ' - Manager ' ~ team.manager,
+        [('Points', team.points), ('Rank', '#' ~ team.rank if team.rank else 'Unranked'), ('Roster', team.member_count)],
+        'dashboard-team-card',
+        team.status,
+        'Your current active-league roster and fantasy totals.',
+        5,
+        'Latest event gain: ' ~ own_latest_gain.event_name ~ ' · +' ~ own_latest_gain.event_points if own_latest_gain else none
+      ) }}
+    {% else %}
+    <article class="panel empty-state-card">
+      <h3>No team in this league yet</h3>
+      <p class="meta">Create a team to start tracking rank, points, and event gains from your dashboard.</p>
+    </article>
+    {% endif %}
+  </article>
+
+  <article class="landing-panel">
+    <div class="section-head compact-head">
+      <div>
+        <span class="eyebrow-chip">Latest League Signal</span>
+        <h2>{% if latest_event_results and latest_event_results.event %}{{ latest_event_results.event.event_name }}{% else %}No scored event yet{% endif %}</h2>
+      </div>
+    </div>
+    {% if latest_event_results and latest_event_results.event %}
+    <div class="summary-band">
+      <div class="mini-stat"><span>Date</span><strong>{{ latest_event_results.event.event_date }}</strong></div>
+      <div class="mini-stat"><span>Scored fighters</span><strong>{{ latest_event_results.event.result_count }}</strong></div>
+      <div class="mini-stat"><span>Best team</span><strong>{{ latest_event_results.best_team.team_name if latest_event_results.best_team else 'TBD' }}</strong></div>
+    </div>
+    <p class="meta" style="margin-top: 16px;">{{ latest_event_results.event.summary }}</p>
+    {% if own_latest_gain %}
+    <p class="meta">Your latest recorded gain was <strong>+{{ own_latest_gain.event_points }}</strong> from {{ own_latest_gain.event_name }}.</p>
+    {% endif %}
+    {% else %}
+    <article class="panel empty-state-card">
+      <h3>No event results yet</h3>
+      <p class="meta">Once the first event is scored, the dashboard will highlight the latest league swing here.</p>
+    </article>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

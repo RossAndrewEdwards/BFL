@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "_table_toolbar.html" import render_table_toolbar %}
+{% block content %}
+<div id="admin-rules-page-content" data-filter-region>
+<h1>Rules and Settings</h1>
+{{ render_table_toolbar(toolbar) }}
+<form method="post">
+  <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+  <h2>Scoring Rules</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Points</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rules %}
+        <tr>
+          <td>{{ r.label }}</td>
+          <td><input type="number" name="rule_{{ r.key }}" value="{{ r.points }}"></td>
+          <td>{{ r.notes }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="table-empty-cell">No scoring rules match your filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <h2>Attendance Values</h2>
+  <div class="form-grid two-col">
+    <label>Training Attendance Score Value <input type="number" name="training_points" value="{{ training_points }}"></label>
+    <label>Support Attendance Score Value <input type="number" name="support_points" value="{{ support_points }}"></label>
+  </div>
+  <h2>League Settings</h2>
+  <div class="form-grid two-col">
+    <label>Team Budget <input type="number" name="team_budget" value="{{ settings.team_budget }}"></label>
+    <label>Minimum Team Size <input type="number" name="minimum_team_size" value="{{ settings.minimum_team_size }}"></label>
+    <label>Maximum Team Size <input type="number" name="maximum_team_size" value="{{ settings.maximum_team_size }}"></label>
+    <label>Tier 1 Cost <input type="number" name="tier_1_cost" value="{{ settings.tier_1_cost }}"></label>
+    <label>Tier 2 Cost <input type="number" name="tier_2_cost" value="{{ settings.tier_2_cost }}"></label>
+    <label>Tier 3 Cost <input type="number" name="tier_3_cost" value="{{ settings.tier_3_cost }}"></label>
+    <label>Cost Mode <select name="cost_mode"><option {{ 'selected' if settings.cost_mode == 'Current Season' else '' }}>Current Season</option><option {{ 'selected' if settings.cost_mode == 'Next Season' else '' }}>Next Season</option></select></label>
+    <label>Public Fighter Score Visibility
+      <select name="public_fighter_scores_visible">
+        <option value="0" {{ 'selected' if settings.public_fighter_scores_visible != '1' else '' }}>Hide raw fighter scores on public pages</option>
+        <option value="1" {{ 'selected' if settings.public_fighter_scores_visible == '1' else '' }}>Show raw fighter scores on public pages</option>
+      </select>
+    </label>
+  </div>
+  <h2>Season End Cost Formula</h2>
+  <div class="form-grid two-col">
+    <label>Target Pick Rate
+      <input type="number" step="0.01" min="0" max="1" name="season_pick_rate_target" value="{{ settings.season_pick_rate_target }}">
+    </label>
+    <label>Sensitivity
+      <input type="number" step="0.01" min="0" name="season_cost_sensitivity" value="{{ settings.season_cost_sensitivity }}">
+    </label>
+    <label>Adjustment Cap
+      <input type="number" step="0.01" min="0" max="1" name="season_cost_adjustment_cap" value="{{ settings.season_cost_adjustment_cap }}">
+    </label>
+    <label>Round Unit
+      <input type="number" min="1" name="season_cost_round_unit" value="{{ settings.season_cost_round_unit }}">
+    </label>
+    <label>Minimum Fighter Cost
+      <input type="number" min="0" name="season_min_cost" value="{{ settings.season_min_cost }}">
+    </label>
+    <label>Maximum Fighter Cost
+      <input type="number" min="0" name="season_max_cost" value="{{ settings.season_max_cost }}">
+    </label>
+  </div>
+  <h2>Six-Trait Formula Controls</h2>
+  {% for group in public_profile_formula_groups %}
+  <section class="panel" style="margin-bottom: 16px;">
+    <div class="section-head compact-section-head">
+      <div>
+        <h3>{{ group.label }}</h3>
+        <p class="meta">{{ group.description }}</p>
+      </div>
+    </div>
+    <div class="form-grid two-col">
+      {% for field in group.fields %}
+      <label>{{ field.label }}
+        <input type="number" step="0.01" min="0" name="{{ field.key }}" value="{{ field.value }}">
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  <button type="submit">Save Rules</button>
+</form>
+</div>
+{% endblock %}

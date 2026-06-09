@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_table_toolbar.html" import render_table_toolbar %}
+{% block content %}
+<div id="admin-notifications-page-content" data-filter-region>
+<h1>Admin - Platform Notices</h1>
+<p class="meta">Create, pause, and review platform-level notices from one site-admin-only page.</p>
+
+<section class="panel">
+  <form method="post" class="form-grid">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <label>Title <input name="title" required></label>
+    <label>Body <textarea name="body" required></textarea></label>
+    <label>Kind
+      <select name="kind">
+        <option value="update">Update</option>
+        <option value="event">Event</option>
+        <option value="success">Success</option>
+        <option value="warning">Warning</option>
+      </select>
+    </label>
+    <label>Expires At <input name="expires_at" placeholder="2026-05-01T12:00:00"></label>
+    <button type="submit">Publish Platform Notice</button>
+  </form>
+</section>
+
+{{ render_table_toolbar(toolbar) }}
+
+<div class="table-wrap" style="margin-top: 20px;">
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Kind</th>
+        <th>Created</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.title }}<div class="meta">{{ row.body }}</div></td>
+        <td>{{ row.kind }}</td>
+        <td>{{ row.created_at[:16].replace('T', ' ') }}</td>
+        <td>{{ 'Active' if row.is_active else 'Paused' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_notification_toggle', notification_id=row.id) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="link-button">{{ 'Pause' if row.is_active else 'Activate' }}</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="table-empty-cell">No platform notices match your filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>
+{% endblock %}

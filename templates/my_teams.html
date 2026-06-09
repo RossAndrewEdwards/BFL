@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_card_templates.html" import render_team_card %}
+{% block content %}
+<section class="hero compact-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">My Team</span>
+      <h1>{{ player.display_name }}'s league team</h1>
+      <p>Your active league team lives here, with its latest score, roster, and event gains in one focused view.</p>
+      {% if player_league %}
+      <p class="meta">League: {{ player_league.name }}</p>
+      {% endif %}
+    </div>
+    <div class="hero-meta">
+      <div class="summary-band">
+        <div class="mini-stat"><span>Team</span><strong>{{ rows|length }}</strong></div>
+        <div class="mini-stat"><span>Ownership</span><strong>{{ 'Assigned' if rows else 'Open' }}</strong></div>
+        <div class="mini-stat"><span>Best score</span><strong>{{ rows|map(attribute='points')|max if rows else 0 }}</strong></div>
+      </div>
+      <div class="hero-actions">
+        {% if slot_usage.remaining > 0 %}
+        <a class="button" href="{{ url_for('player_team_new') }}">Create Team</a>
+        {% else %}
+        <span class="pill warning">Team already created</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="team-grid standings-grid" style="margin-top: 24px;">
+  {% if not rows %}
+  <article class="panel empty-state-card">
+    <h2>You do not have a team in this league yet.</h2>
+    <p class="meta">Create your team to start building a roster and tracking league performance.</p>
+    {% if slot_usage.remaining > 0 %}
+    <div class="hero-actions" style="justify-content: center;">
+      <a class="button" href="{{ url_for('player_team_new') }}">Create Team</a>
+    </div>
+    {% endif %}
+  </article>
+  {% endif %}
+
+  {% for t in rows %}
+  {{ render_team_card(
+    t,
+    url_for('team_detail', team_id=t.id),
+    default_skins,
+    'Player ' ~ (t.player_name or player.display_name) ~ ' · Manager ' ~ t.manager,
+    [('Points', t.points), ('Roster', t.member_count)],
+    'my-team-card',
+    t.status,
+    'Managed from your active league roster.',
+    5,
+    'Latest event gain: ' ~ t.event_history[0].event_name ~ ' · +' ~ t.event_history[0].event_points if t.event_history else none
+  ) }}
+  {% endfor %}
+</section>
+{% endblock %}

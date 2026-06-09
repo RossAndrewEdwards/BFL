@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% from "_card_templates.html" import render_team_card %}
+{% from "_table_toolbar.html" import render_table_toolbar %}
+{% block content %}
+<div id="teams-page-content" data-filter-region>
+{% set leader = rows[0] if rows and rows[0].rank == 1 else None %}
+{% set ranked_rows = rows|selectattr('rank')|list %}
+{% set unranked_rows = rows|rejectattr('rank')|list %}
+
+<section class="hero compact-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Fantasy Teams</span>
+      <h1>One team leads. Everyone else is chasing.</h1>
+    </div>
+    <div class="hero-meta">
+      <div class="summary-band">
+        <div class="mini-stat"><span>Total teams</span><strong>{{ rows|length }}</strong></div>
+        <div class="mini-stat"><span>Valid builds</span><strong>{{ rows|selectattr('status', 'equalto', 'VALID')|list|length }}</strong></div>
+        <div class="mini-stat"><span>Best score</span><strong>{{ rows|map(attribute='points')|max if rows else 0 }}</strong></div>
+      </div>
+      <div class="hero-actions">
+        <a class="button secondary" href="{{ url_for('team_compare') }}">Compare Teams</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{{ render_table_toolbar(toolbar) }}
+
+<section class="teams-workspace">
+  <aside class="leader-column">
+    <div class="section-head compact-section-head">
+      <div>
+        <h2>Current Leader</h2>
+        <p>The team setting the pace.</p>
+      </div>
+    </div>
+    {% if leader %}
+    {{ render_team_card(
+      leader,
+      url_for('team_detail', team_id=leader.id),
+      default_skins,
+      'Player ' ~ (leader.player_name or 'Unassigned') ~ ' · Manager ' ~ leader.manager,
+      [('Points', leader.points), ('Rank', '#' ~ leader.rank)],
+      'compact-leader',
+      'In 1st place',
+      'Leading the table on current fighter points.',
+      5
+    ) }}
+    {% else %}
+    <article class="panel">
+      <p class="meta">No ranked team yet.</p>
+    </article>
+    {% endif %}
+  </aside>
+
+  <div class="team-list-panel">
+    <div class="section-head compact-section-head">
+      <div>
+        <h2>Team Board</h2>
+        <p>Ranked and unranked builds in one scrollable workspace.</p>
+      </div>
+    </div>
+    <div class="team-board-scroll">
+      <section class="team-grid standings-grid">
+        {% if not rows %}
+        <article class="panel empty-state-card">
+          <h3>No teams match your filters.</h3>
+          <p class="meta">Adjust your search, choose a different status, or clear the filters to see the full board.</p>
+        </article>
+        {% endif %}
+
+        {% for t in ranked_rows %}
+        {% if not leader or t.id != leader.id %}
+        {{ render_team_card(
+          t,
+          url_for('team_detail', team_id=t.id),
+          default_skins,
+          'Player ' ~ (t.player_name or 'Unassigned') ~ ' · Manager ' ~ t.manager,
+          [('Points', t.points), ('Rank', '#' ~ t.rank)],
+          'teams-board-card',
+          t.status,
+          'Current fantasy score ' ~ t.points ~ '.',
+          4
+        ) }}
+        {% endif %}
+        {% endfor %}
+
+        {% for t in unranked_rows %}
+        {{ render_team_card(
+          t,
+          url_for('team_detail', team_id=t.id),
+          default_skins,
+          'Player ' ~ (t.player_name or 'Unassigned') ~ ' · Manager ' ~ t.manager,
+          [('Points', t.points), ('Status', 'Unranked')],
+          'teams-board-card',
+          t.status,
+          'Awaiting a valid public ranking.',
+          4
+        ) }}
+        {% endfor %}
+      </section>
+    </div>
+  </div>
+</section>
+</div>
+{% endblock %}

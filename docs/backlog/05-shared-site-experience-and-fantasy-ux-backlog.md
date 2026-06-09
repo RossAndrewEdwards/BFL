@@ -149,7 +149,7 @@ Definition of done:
 
 Priority: `P3`
 Related stories: `US-062`
-Status: `Partial`
+Status: `Implemented`
 
 Scope:
 
@@ -165,7 +165,7 @@ Definition of done:
 
 Priority: `P3`
 Related stories: `US-063`
-Status: `Partial`
+Status: `Implemented`
 
 Scope:
 
@@ -176,12 +176,13 @@ Definition of done:
 
 - Fighter cards use one shared trading-card style component wherever fighter cards appear.
 - Updating the template updates all fighter-card surfaces consistently.
+- Card-size standardisation and layout accommodation are tracked separately in `BL-064`.
 
 ### BL-055 Improve leaderboard ranking and search
 
 Priority: `P3`
 Related stories: `US-080`
-Status: `Planned`
+Status: `Implemented`
 
 Scope:
 
@@ -198,7 +199,7 @@ Definition of done:
 
 Priority: `P3`
 Related stories: `US-081`
-Status: `Planned`
+Status: `Implemented`
 
 Scope:
 
@@ -214,7 +215,7 @@ Definition of done:
 
 Priority: `P3`
 Related stories: `US-047`, `US-062`, `US-063`, `US-071`
-Status: `Planned`
+Status: `Implemented`
 
 Scope:
 
@@ -225,6 +226,7 @@ Definition of done:
 
 - Fighter and team cards feel like part of one premium collectible-card system.
 - Popup cards no longer feel like plain modals with card data dropped into them.
+- Trading-card sizing consistency for fighter cards across every page is tracked separately in `BL-064`.
 
 ## Notes
 

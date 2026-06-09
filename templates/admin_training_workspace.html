@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel" style="margin-bottom: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h1>Training Workspace</h1>
+      <p class="meta">Build reusable groups and mark training or support quickly without working from the fighter list.</p>
+    </div>
+    <div class="hero-actions">
+      {% if selected_scope_league %}
+      <a class="button secondary" href="{{ url_for('admin_league_edit', league_id=selected_scope_league.id) }}">Back to League Workspace</a>
+      {% elif league %}
+      <a class="button secondary" href="{{ url_for('admin_my_league') }}">Back to My League</a>
+      {% endif %}
+      {% if league %}
+      <a class="button secondary" href="{{ url_for('admin_fighters', league_id=league.id if can_choose_league else None) }}">Manage Fighters</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% if can_choose_league %}
+<section class="panel training-workspace-panel" style="margin-bottom: 20px;">
+  <form method="get" action="{{ url_for('admin_training_workspace') }}" class="inline-form">
+    <label>League
+      <select name="league_id" style="min-width: 240px;">
+        <option value="">Choose a league</option>
+        {% for option in league_options %}
+        <option value="{{ option.id }}" {% if league and option.id == league.id %}selected{% endif %}>{{ option.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit" class="button secondary">Open Training Workspace</button>
+  </form>
+</section>
+{% endif %}
+
+{% if not league %}
+<section class="panel">
+  <p class="meta">Choose a league to manage recurring training groups and fast attendance updates.</p>
+</section>
+{% else %}
+<section class="summary-band training-summary">
+  <div class="mini-stat"><span>League</span><strong>{{ league.name }}</strong></div>
+  <div class="mini-stat"><span>Groups</span><strong>{{ groups|length }}</strong></div>
+  <div class="mini-stat"><span>Fighters</span><strong>{{ fighters|length }}</strong></div>
+  <div class="mini-stat"><span>Default date</span><strong>{{ quick_attendance_date }}</strong></div>
+</section>
+
+<div class="workspace-grid training-workspace-grid">
+  <section class="panel training-group-create-panel">
+    <div class="section-head compact-section-head">
+      <div>
+        <h2>Create Training Group</h2>
+        <p class="meta">Set up recurring groups like Monday drills, weapon squads, or support crews.</p>
+      </div>
+    </div>
+    <form method="post" action="{{ url_for('admin_training_group_create') }}" class="form-grid">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+      <label>Group Name
+        <input type="text" name="name" required placeholder="Monday Team 1">
+      </label>
+      <label>Notes
+        <input type="text" name="notes" placeholder="Optional reminder or drill focus">
+      </label>
+      <label class="full">Fighters
+        <select name="fighter_ids" multiple size="12" class="training-member-select">
+          {% for fighter in fighters %}
+          <option value="{{ fighter.id }}">{{ fighter.name }}{% if fighter.nickname %} ({{ fighter.nickname }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="hero-actions">
+        <button type="submit">Create Group</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="training-groups-column">
+    {% for group in groups %}
+    <details class="panel training-group-panel" data-training-group-id="{{ group.id }}" data-persist-key="training-group-{{ group.id }}" {% if loop.first %}open{% endif %}>
+      <summary class="training-group-summary">
+        <div>
+          <strong>{{ group.name }}</strong>
+          <span>{{ group.fighter_count }} fighter{% if group.fighter_count != 1 %}s{% endif %}</span>
+        </div>
+        {% if group.notes %}
+        <span class="meta">{{ group.notes }}</span>
+        {% endif %}
+      </summary>
+
+      <div class="training-group-actions">
+        <form method="post" action="{{ url_for('admin_training_group_mark', group_id=group.id) }}" class="inline-form training-mark-form" data-disable-on-submit="true">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="attendance_date" value="{{ quick_attendance_date }}">
+          <input type="hidden" name="score_units" value="1">
+          <input type="hidden" name="score_type" value="">
+          <input type="text" name="note" placeholder="Session note">
+          <button type="submit" name="score_type" value="training">+ Training for Group</button>
+          <button type="submit" name="score_type" value="support" class="button secondary">+ Support for Group</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_training_group_delete', group_id=group.id) }}" class="inline-form" onsubmit="return confirm('Delete this training group?');">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="button danger-button">Delete Group</button>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fighter</th>
+              <th>Training</th>
+              <th>Support</th>
+              <th>Quick Mark</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fighter in group.members %}
+            <tr>
+              <td>
+                <div class="fighter-admin-name">{{ fighter.name }}</div>
+                <div class="fighter-admin-submeta">
+                  <span class="pill">Tier {{ fighter.tier }}</span>
+                  {% if fighter.nickname %}
+                  <span>{{ fighter.nickname }}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td>{{ fighter.training }}</td>
+              <td>{{ fighter.support }}</td>
+              <td>
+                <form method="post" action="{{ url_for('admin_training_group_fighter_mark', group_id=group.id, fighter_id=fighter.id) }}" class="inline-attendance-form fighter-admin-inline-form training-mark-form" data-disable-on-submit="true">
+                  <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                  <input type="hidden" name="attendance_date" value="{{ quick_attendance_date }}">
+                  <input type="hidden" name="score_units" value="1">
+                  <input type="hidden" name="score_type" value="">
+                  <input type="text" name="note" value="" placeholder="Session note">
+                  <div class="inline-attendance-actions">
+                    <button type="submit" name="score_type" value="training">+ Training</button>
+                    <button type="submit" name="score_type" value="support">+ Support</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="table-empty-cell">No fighters in this group yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <form method="post" action="{{ url_for('admin_training_group_members', group_id=group.id) }}" class="form-grid training-members-form">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+        <label class="full">Manage fighters in {{ group.name }}
+          <select name="fighter_ids" multiple size="10" class="training-member-select">
+            {% set member_ids = group.members | map(attribute='id') | list %}
+            {% for fighter in fighters %}
+            <option value="{{ fighter.id }}" {% if fighter.id in member_ids %}selected{% endif %}>{{ fighter.name }}{% if fighter.nickname %} ({{ fighter.nickname }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="hero-actions">
+          <button type="submit" class="button secondary">Save Group Fighters</button>
+        </div>
+      </form>
+    </details>
+    {% else %}
+    <section class="panel">
+      <p class="meta">No training groups yet. Create one to start marking attendance quickly.</p>
+    </section>
+    {% endfor %}
+  </section>
+</div>
+
+<script>
+document.querySelectorAll('.training-mark-form[data-disable-on-submit="true"]').forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    const submitter = event.submitter;
+    const scoreTypeInput = form.querySelector('input[name="score_type"]');
+    if (submitter && scoreTypeInput && submitter.name === 'score_type') {
+      scoreTypeInput.value = submitter.value;
+    }
+    form.querySelectorAll('button[type="submit"]').forEach((button) => {
+      button.disabled = true;
+    });
+  });
+});
+
+</script>
+{% endif %}
+{% endblock %}

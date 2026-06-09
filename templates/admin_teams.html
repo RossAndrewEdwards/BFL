@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "_table_toolbar.html" import render_table_toolbar %}
+{% block content %}
+<div id="admin-teams-page-content" data-filter-region>
+<section class="panel" style="margin-bottom: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h1>League Teams</h1>
+    </div>
+    <div class="hero-actions">
+      {% if selected_scope_league %}
+      <a class="button secondary" href="{{ url_for('admin_league_edit', league_id=selected_scope_league.id) }}">Back to League Workspace</a>
+      {% else %}
+      <a class="button secondary" href="{{ url_for('admin_my_league') }}">Back to My League</a>
+      {% endif %}
+      <a class="button" href="{{ url_for('admin_team_new') }}">Add Team</a>
+    </div>
+  </div>
+</section>
+{% if quota %}
+<section class="panel" style="margin-bottom: 16px;">
+  <h2>{{ quota.league_name }} Team Quota</h2>
+  <p class="meta">
+    {{ quota.teams_used }} / {{ quota.max_teams if quota.max_teams is not none else 'Unlimited' }} team slots used.
+    {% if quota.teams_remaining is not none %}{{ quota.teams_remaining }} remaining.{% endif %}
+  </p>
+</section>
+{% endif %}
+{{ render_table_toolbar(toolbar) }}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Team</th>
+        <th>Player</th>
+        <th>Manager</th>
+        <th>Cost</th>
+        <th>Points</th>
+        <th>Status</th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in rows %}
+      <tr class="{{ 'invalid' if t.status != 'VALID' else '' }}">
+        <td>{{ t.rank or '--' }}</td>
+        <td>{{ t.team_name }}</td>
+        <td>{{ t.player_name or 'Unassigned' }}</td>
+        <td>{{ t.manager }}</td>
+        <td>{{ t.cost }}</td>
+        <td>{{ t.points }}</td>
+        <td>{{ t.status }}</td>
+        <td><a href="{{ url_for('admin_team_edit', team_id=t.id) }}">Edit</a></td>
+        <td>
+          <form method="post" action="{{ url_for('admin_team_delete', team_id=t.id) }}" onsubmit="return confirm('Delete {{ t.team_name|e }}? This cannot be undone.');">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="link-button danger-link">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" class="table-empty-cell">No teams match your filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>
+{% endblock %}

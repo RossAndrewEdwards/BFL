@@ -1,0 +1,747 @@
+{
+  "rules": [
+    {
+      "key": "training",
+      "label": "Training",
+      "points": 1,
+      "notes": "Awarded per training unit/session"
+    },
+    {
+      "key": "competitions",
+      "label": "Competitions",
+      "points": 3,
+      "notes": "Awarded per competition/event entered"
+    },
+    {
+      "key": "support",
+      "label": "Support",
+      "points": 3,
+      "notes": "Support / volunteering / team support count"
+    },
+    {
+      "key": "gold_medals",
+      "label": "Gold Medallist",
+      "points": 8,
+      "notes": "Each gold medal"
+    },
+    {
+      "key": "silver_medals",
+      "label": "Silver Medallist",
+      "points": 6,
+      "notes": "Each silver medal"
+    },
+    {
+      "key": "bronze_medals",
+      "label": "Bronze Medallist",
+      "points": 4,
+      "notes": "Each bronze medal"
+    },
+    {
+      "key": "kills",
+      "label": "Competition Kills",
+      "points": 3,
+      "notes": "Each kill"
+    },
+    {
+      "key": "deaths",
+      "label": "Competition Deaths",
+      "points": -2,
+      "notes": "Each death"
+    },
+    {
+      "key": "sit_downs",
+      "label": "Sit Downs",
+      "points": -3,
+      "notes": "Each sit down"
+    },
+    {
+      "key": "yellow_cards",
+      "label": "Yellow Cards",
+      "points": -5,
+      "notes": "Each yellow card"
+    },
+    {
+      "key": "red_cards",
+      "label": "Red Cards",
+      "points": -10,
+      "notes": "Each red card"
+    }
+  ],
+  "settings": {
+    "team_budget": "500",
+    "minimum_team_size": "5",
+    "maximum_team_size": "8",
+    "tier_1_cost": "100",
+    "tier_2_cost": "75",
+    "tier_3_cost": "50",
+    "cost_mode": "Current Season"
+  },
+  "ownership_brackets": [
+    {
+      "lower_bound": 0.0,
+      "adjustment": -10,
+      "meaning": "Under 20% owned"
+    },
+    {
+      "lower_bound": 0.2,
+      "adjustment": 0,
+      "meaning": "20%+ owned"
+    },
+    {
+      "lower_bound": 0.4,
+      "adjustment": 10,
+      "meaning": "40%+ owned"
+    },
+    {
+      "lower_bound": 0.6,
+      "adjustment": 15,
+      "meaning": "60%+ owned"
+    },
+    {
+      "lower_bound": 0.8,
+      "adjustment": 20,
+      "meaning": "80%+ owned"
+    }
+  ],
+  "fighters": [
+    {
+      "tier": "Tier 1",
+      "name": "Andy W",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 1",
+      "name": "Ben R",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 1",
+      "name": "Bruna",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 1",
+      "name": "Celestine",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 1",
+      "name": "George",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 1",
+      "name": "Greg",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 1",
+      "name": "Jack",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 1",
+      "name": "Jacob",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 1",
+      "name": "JD",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 1",
+      "name": "Seb",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 1",
+      "name": "Steve",
+      "height": null,
+      "weight": null,
+      "current_cost": 100,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 2",
+      "name": "Andrew K",
+      "height": null,
+      "weight": null,
+      "current_cost": 75,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 2",
+      "name": "Ben C",
+      "height": null,
+      "weight": null,
+      "current_cost": 75,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 2",
+      "name": "Blaze",
+      "height": null,
+      "weight": null,
+      "current_cost": 75,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 2",
+      "name": "Gareth",
+      "height": null,
+      "weight": null,
+      "current_cost": 75,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 2",
+      "name": "Matt",
+      "height": null,
+      "weight": null,
+      "current_cost": 75,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 2",
+      "name": "Morgan",
+      "height": null,
+      "weight": null,
+      "current_cost": 75,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 2",
+      "name": "Oskar",
+      "height": null,
+      "weight": null,
+      "current_cost": 75,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 2",
+      "name": "Ryan",
+      "height": null,
+      "weight": null,
+      "current_cost": 75,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 2",
+      "name": "Sonny",
+      "height": null,
+      "weight": null,
+      "current_cost": 75,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 3",
+      "name": "Eddie",
+      "height": null,
+      "weight": null,
+      "current_cost": 50,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 3",
+      "name": "Jamie F",
+      "height": null,
+      "weight": null,
+      "current_cost": 50,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 3",
+      "name": "Joshua D",
+      "height": null,
+      "weight": null,
+      "current_cost": 50,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 3",
+      "name": "Patt",
+      "height": null,
+      "weight": null,
+      "current_cost": 50,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 3",
+      "name": "Ross",
+      "height": null,
+      "weight": null,
+      "current_cost": 50,
+      "notes": ""
+    },
+    {
+      "tier": "Tier 3",
+      "name": "Tom",
+      "height": null,
+      "weight": null,
+      "current_cost": 50,
+      "notes": ""
+    }
+  ],
+  "baseline": [
+    {
+      "fighter_name": "Andy W",
+      "training": 4,
+      "support": 0
+    },
+    {
+      "fighter_name": "Ben R",
+      "training": 2,
+      "support": 0
+    },
+    {
+      "fighter_name": "Bruna",
+      "training": 3,
+      "support": 0
+    },
+    {
+      "fighter_name": "Celestine",
+      "training": 3,
+      "support": 0
+    },
+    {
+      "fighter_name": "George",
+      "training": 4,
+      "support": 0
+    },
+    {
+      "fighter_name": "Greg",
+      "training": 1,
+      "support": 1
+    },
+    {
+      "fighter_name": "Jack",
+      "training": 5,
+      "support": 0
+    },
+    {
+      "fighter_name": "Jacob",
+      "training": 2,
+      "support": 0
+    },
+    {
+      "fighter_name": "JD",
+      "training": 0,
+      "support": 0
+    },
+    {
+      "fighter_name": "Seb",
+      "training": 1,
+      "support": 0
+    },
+    {
+      "fighter_name": "Steve",
+      "training": 3,
+      "support": 0
+    },
+    {
+      "fighter_name": "Andrew K",
+      "training": 0,
+      "support": 0
+    },
+    {
+      "fighter_name": "Ben C",
+      "training": 2,
+      "support": 0
+    },
+    {
+      "fighter_name": "Blaze",
+      "training": 2,
+      "support": 0
+    },
+    {
+      "fighter_name": "Gareth",
+      "training": 3,
+      "support": 0
+    },
+    {
+      "fighter_name": "Matt",
+      "training": 3,
+      "support": 0
+    },
+    {
+      "fighter_name": "Morgan",
+      "training": 1,
+      "support": 0
+    },
+    {
+      "fighter_name": "Oskar",
+      "training": 0,
+      "support": 0
+    },
+    {
+      "fighter_name": "Ryan",
+      "training": 0,
+      "support": 0
+    },
+    {
+      "fighter_name": "Sonny",
+      "training": 2,
+      "support": 0
+    },
+    {
+      "fighter_name": "Eddie",
+      "training": 0,
+      "support": 0
+    },
+    {
+      "fighter_name": "Jamie F",
+      "training": 0,
+      "support": 0
+    },
+    {
+      "fighter_name": "Joshua D",
+      "training": 0,
+      "support": 0
+    },
+    {
+      "fighter_name": "Patt",
+      "training": 6,
+      "support": 0
+    },
+    {
+      "fighter_name": "Ross",
+      "training": 3,
+      "support": 1
+    },
+    {
+      "fighter_name": "Tom",
+      "training": 3,
+      "support": 0
+    }
+  ],
+  "events": [
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Andy W",
+      "gold_medals": 0,
+      "silver_medals": 1,
+      "bronze_medals": 1,
+      "kills": 10,
+      "deaths": 9,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Ben R",
+      "gold_medals": 0,
+      "silver_medals": 1,
+      "bronze_medals": 0,
+      "kills": 10,
+      "deaths": 3,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Bruna",
+      "gold_medals": 3,
+      "silver_medals": 2,
+      "bronze_medals": 0,
+      "kills": 5,
+      "deaths": 2,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Celestine",
+      "gold_medals": 1,
+      "silver_medals": 0,
+      "bronze_medals": 0,
+      "kills": 0,
+      "deaths": 0,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "George",
+      "gold_medals": 0,
+      "silver_medals": 2,
+      "bronze_medals": 0,
+      "kills": 7,
+      "deaths": 4,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Jack",
+      "gold_medals": 0,
+      "silver_medals": 1,
+      "bronze_medals": 0,
+      "kills": 1,
+      "deaths": 2,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Jacob",
+      "gold_medals": 0,
+      "silver_medals": 1,
+      "bronze_medals": 0,
+      "kills": 9,
+      "deaths": 3,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "JD",
+      "gold_medals": 1,
+      "silver_medals": 1,
+      "bronze_medals": 1,
+      "kills": 2,
+      "deaths": 1,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Seb",
+      "gold_medals": 0,
+      "silver_medals": 1,
+      "bronze_medals": 0,
+      "kills": 6,
+      "deaths": 3,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Steve",
+      "gold_medals": 0,
+      "silver_medals": 1,
+      "bronze_medals": 0,
+      "kills": 16,
+      "deaths": 3,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Andrew K",
+      "gold_medals": 0,
+      "silver_medals": 0,
+      "bronze_medals": 0,
+      "kills": 1,
+      "deaths": 8,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Ben C",
+      "gold_medals": 0,
+      "silver_medals": 0,
+      "bronze_medals": 0,
+      "kills": 4,
+      "deaths": 9,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Blaze",
+      "gold_medals": 0,
+      "silver_medals": 0,
+      "bronze_medals": 0,
+      "kills": 3,
+      "deaths": 5,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Gareth",
+      "gold_medals": 0,
+      "silver_medals": 0,
+      "bronze_medals": 0,
+      "kills": 5,
+      "deaths": 7,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Matt",
+      "gold_medals": 0,
+      "silver_medals": 0,
+      "bronze_medals": 0,
+      "kills": 0,
+      "deaths": 6,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Morgan",
+      "gold_medals": 0,
+      "silver_medals": 0,
+      "bronze_medals": 1,
+      "kills": 6,
+      "deaths": 4,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Oskar",
+      "gold_medals": 0,
+      "silver_medals": 0,
+      "bronze_medals": 0,
+      "kills": 3,
+      "deaths": 6,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Ryan",
+      "gold_medals": 0,
+      "silver_medals": 0,
+      "bronze_medals": 0,
+      "kills": 1,
+      "deaths": 7,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    },
+    {
+      "event_date": "2026-04-01",
+      "event_name": "Castleton",
+      "fighter_name": "Sonny",
+      "gold_medals": 0,
+      "silver_medals": 0,
+      "bronze_medals": 0,
+      "kills": 1,
+      "deaths": 3,
+      "sit_downs": 0,
+      "yellow_cards": 0,
+      "red_cards": 0
+    }
+  ],
+  "fantasy_teams": [
+    {
+      "team_name": "Can You Dance?",
+      "manager": "GK",
+      "fighters": [
+        "Gareth",
+        "Seb",
+        "Ben R",
+        "Ross",
+        "Bruna",
+        "Patt"
+      ]
+    },
+    {
+      "team_name": "Armourgeddon",
+      "manager": "Ross",
+      "fighters": [
+        "Ross",
+        "Andy W",
+        "Steve",
+        "Sonny",
+        "Jack",
+        "Tom"
+      ]
+    },
+    {
+      "team_name": "Big Daddy Team",
+      "manager": "Empress Rosie",
+      "fighters": [
+        "George",
+        "Steve",
+        "Andy W",
+        "Jacob",
+        "Morgan"
+      ]
+    },
+    {
+      "team_name": "Rowland's team",
+      "manager": "Rowland",
+      "fighters": [
+        "Bruna",
+        "Steve",
+        "Jamie F",
+        "Ross",
+        "Gareth",
+        "Patt",
+        "Tom"
+      ]
+    }
+  ]
+}

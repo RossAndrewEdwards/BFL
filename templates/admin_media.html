@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "_table_toolbar.html" import render_table_toolbar %}
+{% block content %}
+<div id="admin-media-page-content" data-filter-region>
+<h1>Admin Media</h1>
+<section class="panel">
+  <h2>Event Banner</h2>
+  <form method="post" class="form-grid two-col">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <label>Event Name <input name="event_name" required></label>
+    <label>Event Date <input type="date" name="event_date" required></label>
+    <label>Headline <input name="headline"></label>
+    <label>Subheading <input name="subheading"></label>
+    <label class="full">Image URL <input name="image_url"></label>
+    <button type="submit">Save Event Media</button>
+  </form>
+</section>
+
+<h2>Event Banner Library</h2>
+{{ render_table_toolbar(banner_toolbar) }}
+<div class="table-wrap" style="margin-top: 20px;">
+  <table>
+    <thead>
+      <tr>
+        <th>Event</th>
+        <th>Date</th>
+        <th>Headline</th>
+        <th>Image</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for banner in banners %}
+      <tr>
+        <td>{{ banner.event_name }}</td>
+        <td>{{ banner.event_date }}</td>
+        <td>{{ banner.headline or '-' }}</td>
+        <td>{{ banner.image_url or '-' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="table-empty-cell">No event banners match your filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<section class="panel" style="margin-top: 20px;">
+  <h2>Fighter Media Check</h2>
+  {{ render_table_toolbar(fighter_toolbar) }}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fighter</th>
+          <th>Image</th>
+          <th>Credit</th>
+          <th>Source</th>
+          <th>Hero Quote</th>
+          <th>Bio</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fighter in fighters %}
+        <tr>
+          <td>{{ fighter.name }}</td>
+          <td>{{ fighter.image_url or '-' }}</td>
+          <td>{{ fighter.image_credit or '-' }}</td>
+          <td>{{ fighter.image_source_url or '-' }}</td>
+          <td>{{ fighter.hero_quote or '-' }}</td>
+          <td>{{ 'Added' if fighter.bio else '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="table-empty-cell">No fighters match your media filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+</div>
+{% endblock %}

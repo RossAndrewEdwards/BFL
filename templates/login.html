@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel narrow">
+  <h1>Login</h1>
+  <form method="post" class="form-grid">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <label>Username <input name="username" required></label>
+    <label>Password <input name="password" type="password" required></label>
+    <button type="submit">Login</button>
+  </form>
+  <p class="meta"><a href="{{ url_for('claim_code') }}">Have a claim code instead?</a></p>
+</section>
+{% endblock %}

@@ -9,15 +9,21 @@ invicta_fantasy_webapp/
 |-- app.py
 |-- auth_support.py
 |-- db_support.py
+|-- event_scoring_support.py
+|-- exceptions.py
+|-- fighter_request_support.py
 |-- form_support.py
 |-- league_data_support.py
 |-- ops_support.py
 |-- player_support.py
 |-- public_support.py
 |-- quota_support.py
+|-- roster_engine.py
 |-- scoring_support.py
 |-- season_support.py
+|-- team_support.py
 |-- tournament_support.py
+|-- training_support.py
 |-- ui_support.py
 |-- routes_admin_dashboard.py
 |-- routes_admin_events.py
@@ -46,7 +52,9 @@ invicta_fantasy_webapp/
 - `app.py`
   Main Flask entrypoint and application wiring.
 - `*_support.py`
-  Shared business logic for auth, scoring, league data, player logic, quotas, operations, and public payloads.
+  Shared business logic modules (auth, database, events scoring, fighter requests, forms, league data, operations, players, public, quotas, scoring, seasons, teams, tournament integration, training, ui).
+- `roster_engine.py` and `exceptions.py`
+  Core logic for validation and evaluation of rosters, budget limits, and custom league rules, along with app exceptions.
 
 ### Route Modules
 

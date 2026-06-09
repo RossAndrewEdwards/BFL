@@ -10,7 +10,7 @@ This document covers the broader app-like interaction pass: shell continuity, tr
 
 Priority: `P3`
 Related stories: `US-083`, `US-084`, `US-085`
-Status: `Planned`
+Status: `Implemented`
 
 Scope:
 
@@ -26,7 +26,7 @@ Definition of done:
 
 Priority: `P3`
 Related stories: `US-086`, `US-087`, `US-088`, `US-089`, `US-090`, `US-091`
-Status: `Planned`
+Status: `Implemented`
 
 Scope:
 
@@ -41,7 +41,7 @@ Definition of done:
 
 Priority: `P3`
 Related stories: `US-092`, `US-093`, `US-094`, `US-095`, `US-096`, `US-097`, `US-098`
-Status: `Planned`
+Status: `Implemented`
 
 Scope:
 
@@ -56,7 +56,7 @@ Definition of done:
 
 Priority: `P3`
 Related stories: `US-099`, `US-100`, `US-101`, `US-102`, `US-103`
-Status: `Planned`
+Status: `Implemented`
 
 Scope:
 
@@ -71,7 +71,7 @@ Definition of done:
 
 Priority: `P3`
 Related stories: `US-104`, `US-105`, `US-106`, `US-107`, `US-108`, `US-109`, `US-110`
-Status: `Planned`
+Status: `Implemented`
 
 Scope:
 
@@ -87,7 +87,7 @@ Definition of done:
 
 Priority: `P3`
 Related stories: `US-111`, `US-112`
-Status: `Planned`
+Status: `Implemented`
 
 Scope:
 
@@ -100,3 +100,21 @@ Definition of done:
 - Fighter discovery feels fast and modern.
 - The app remains comfortable on mobile.
 - Accessibility and performance polish supports the richer interaction model cleanly.
+
+### BL-064 Standardise fighter cards to a true trading-card size across the app
+
+Priority: `P3`
+Related stories: `US-063`, `US-071`, `US-091A`
+Status: `Implemented`
+
+Scope:
+
+- Lock fighter cards to one shared baseline size and aspect ratio across homepage, fighter browse, leaderboard overlays, event views, and other player-facing card surfaces.
+- Adjust surrounding layouts so pages accommodate the trading-card footprint instead of shrinking or stretching fighter cards differently by page.
+- Preserve the same card proportions on smaller screens even when the layout stacks, scrolls, or changes column count.
+
+Definition of done:
+
+- Fighter cards look like the same physical trading-card object everywhere in the app.
+- Page layouts adapt around the shared card size rather than distorting fighter cards to fit local layout constraints.
+- Mobile and overlay contexts still preserve the same recognisable fighter-card proportions.

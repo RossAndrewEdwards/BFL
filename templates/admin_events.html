@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% from "_table_toolbar.html" import render_table_toolbar %}
+{% block content %}
+<div id="admin-events-page-content" data-filter-region>
+<section class="panel" style="margin-bottom: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h1>League Events</h1>
+    </div>
+    <div class="hero-actions">
+      {% if selected_scope_league %}
+      <a class="button secondary" href="{{ url_for('admin_league_edit', league_id=selected_scope_league.id) }}">Back to League Workspace</a>
+      {% else %}
+      <a class="button secondary" href="{{ url_for('admin_my_league') }}">Back to My League</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+<section class="panel" style="margin-bottom: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h2>Live Scoring Workspace</h2>
+      <p class="meta">Primary event-entry flow.</p>
+    </div>
+  </div>
+  <form method="post" action="{{ url_for('admin_event_workspace_start') }}" class="form-grid event-grid">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    {% if can_choose_import_league %}
+    <label>League
+      <select name="target_league_id">
+        <option value="">Choose a league</option>
+        {% for league in league_options %}
+        <option value="{{ league.id }}" {% if selected_scope_league and selected_scope_league.id == league.id %}selected{% endif %}>{{ league.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {% endif %}
+    <label>Scheduled Event
+      <select name="scheduled_event_id">
+        <option value="">Create or use a manual event</option>
+        {% for event in scheduled_events %}
+        <option value="{{ event.id }}">{{ event.display_label }} - {{ event.status_label }} - {{ event.fighter_result_count }} results</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Manual Event Name
+      <input type="text" name="event_name" placeholder="Use when the calendar item is missing">
+    </label>
+    <label>Manual Event Date
+      <input type="date" name="event_date">
+    </label>
+    <div class="hero-actions">
+      <button type="submit">Open Scoring Workspace</button>
+    </div>
+  </form>
+</section>
+<div class="hero-actions" style="margin-top: 12px; margin-bottom: 16px;">
+  <form method="get" action="{{ url_for('admin_events_export') }}" class="inline-form">
+    {% if can_choose_import_league %}
+    <select name="league_id" style="min-width: 220px;">
+      <option value="">All leagues</option>
+      {% for league in league_options %}
+      <option value="{{ league.id }}" {% if selected_scope_league and selected_scope_league.id == league.id %}selected{% endif %}>{{ league.name }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+    <button type="submit" class="button secondary">Export Event CSV</button>
+  </form>
+</div>
+<section class="panel">
+  <details class="fighter-admin-disclosure" data-persist-key="events-single-result-fallback">
+    <summary>Quick single-result fallback</summary>
+    <p class="meta">For one-off patches only.</p>
+    <form method="post" class="form-grid event-grid">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+      {% if can_choose_import_league %}
+      <label>League
+        <select name="target_league_id">
+          <option value="">Choose a league</option>
+          {% for league in league_options %}
+          <option value="{{ league.id }}" {% if selected_scope_league and selected_scope_league.id == league.id %}selected{% endif %}>{{ league.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endif %}
+      <label>Scheduled Event
+        <select name="scheduled_event_id">
+          <option value="">No scheduled event</option>
+          {% for event in scheduled_events %}
+          <option value="{{ event.id }}">{{ event.display_label }} - {{ event.status_label }} - {{ event.fighter_result_count }} results</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Event Name
+        <input type="text" name="event_name" placeholder="Manual event name">
+      </label>
+      <label>Event Date
+        <input type="date" name="event_date">
+      </label>
+      <label>Group / Match
+        <input type="text" name="group_name" placeholder="Example: Group A or Match 1">
+      </label>
+      <label>Fighter <select name="fighter_id">{% for f in fighters %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}</select></label>
+      {% for key,label in stat_fields %}
+      <label>{{ label }} <input type="number" name="{{ key }}" value="0"></label>
+      {% endfor %}
+      <div class="hero-actions">
+        <button type="submit" name="submit_action" value="draft" class="button secondary">Save Draft</button>
+        <button type="submit" name="submit_action" value="complete">Add as Complete</button>
+      </div>
+    </form>
+  </details>
+</section>
+<section class="panel" style="margin-top: 20px; margin-bottom: 20px;">
+  <h2>Bulk Import Event Results</h2>
+  <p class="meta">Paste CSV with <code>event_name,event_date,fighter_name</code> plus any scoring columns. Scheduled events and fighters must already exist in the same league.</p>
+  <form method="post" action="{{ url_for('admin_events_import') }}" class="form-grid">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    {% if can_choose_import_league %}
+    <label>Target League
+      <select name="target_league_id" required>
+        <option value="">Choose a league</option>
+        {% for league in league_options %}
+        <option value="{{ league.id }}" {% if selected_scope_league and selected_scope_league.id == league.id %}selected{% endif %}>{{ league.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {% endif %}
+    <label class="full">CSV Payload
+      <textarea name="csv_payload" rows="8" placeholder="event_name,event_date,fighter_name,rounds_fought,gold_medals,kills&#10;Invicta Open,2026-06-12,Jane Doe,1,1,3"></textarea>
+    </label>
+    <div class="hero-actions">
+      <button type="submit">Import Event Results</button>
+    </div>
+  </form>
+</section>
+{{ render_table_toolbar(toolbar) }}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Event</th>
+        <th>Group</th>
+        <th>Status</th>
+        <th>Fighter</th>
+        <th>RF</th>
+        <th>SA</th>
+        <th>G</th>
+        <th>S</th>
+        <th>B</th>
+        <th>K</th>
+        <th>A</th>
+        <th>D</th>
+        <th>SD</th>
+        <th>Y</th>
+        <th>R</th>
+        <th>Pts</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in events %}
+      <tr>
+        <td>{{ e.event_date }}</td>
+        <td>{{ e.event_name }}</td>
+        <td>{{ e.group_name or 'Ungrouped' }}</td>
+        <td>{{ 'Draft' if e.entry_status == 'draft' else e.scheduled_status_label }}</td>
+        <td>{{ e.fighter_name }}</td>
+        <td>{{ e.rounds_fought }}</td>
+        <td>{{ e.special_awards }}</td>
+        <td>{{ e.gold_medals }}</td>
+        <td>{{ e.silver_medals }}</td>
+        <td>{{ e.bronze_medals }}</td>
+        <td>{{ e.kills }}</td>
+        <td>{{ e.assists }}</td>
+        <td>{{ e.deaths }}</td>
+        <td>{{ e.sit_downs }}</td>
+        <td>{{ e.yellow_cards }}</td>
+        <td>{{ e.red_cards }}</td>
+        <td>{{ event_points(e, rules) }}</td>
+        <td>
+          {% if e.linked_event_id %}
+          <a href="{{ url_for('admin_event_workspace', banner_id=e.linked_event_id) }}">Workspace</a>
+          {% endif %}
+          <a href="{{ url_for('admin_event_edit', event_id=e.id) }}">Edit</a>
+          <form method="post" action="{{ url_for('admin_event_delete', event_id=e.id) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <button class="link-button">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="18" class="table-empty-cell">No event results match your filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>
+{% endblock %}

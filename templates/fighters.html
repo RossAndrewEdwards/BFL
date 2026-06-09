@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% from "_card_templates.html" import render_fighter_card %}
+{% from "_table_toolbar.html" import render_table_toolbar %}
+{% from "_tier_helpers.html" import render_tier_legend %}
+{% block content %}
+<div id="fighters-page-content" data-filter-region>
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Roster Binder</span>
+      <h1>Scout the league through collectible fighter cards.</h1>
+      <p class="meta">Browse by tier, rank, and fantasy identity, then open a fuller fighter profile without losing your place in the collection.</p>
+      <div class="hero-actions" style="margin-top: 16px;">
+        <a class="button secondary" href="{{ url_for('request_new_fighter') }}">Request New Fighter</a>
+      </div>
+    </div>
+    <div class="hero-meta">
+      <div class="summary-band">
+        <div class="mini-stat"><span>Tier 1</span><strong>{{ rows|selectattr('tier', 'equalto', 'Tier 1')|list|length }}</strong></div>
+        <div class="mini-stat"><span>Tier 2</span><strong>{{ rows|selectattr('tier', 'equalto', 'Tier 2')|list|length }}</strong></div>
+        <div class="mini-stat"><span>Tier 3</span><strong>{{ rows|selectattr('tier', 'equalto', 'Tier 3')|list|length }}</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if tier_spotlights and not toolbar.has_active_filters %}
+<section class="fighter-tier-spotlight-strip">
+  {% for tier in tier_spotlights %}
+  <article class="landing-panel fighter-tier-spotlight-card {{ tier.tier|lower|replace(' ', '-') }}">
+    <span class="tier-badge hero-tier-badge">{{ tier.tier }}</span>
+    <strong>{{ tier.leader_name }}</strong>
+    <p class="meta">
+      {% if tier.leader_rank %}
+      Rank #{{ tier.leader_rank }} ·
+      {% endif %}
+      {{ tier.leader_points }} pts · {{ tier.count }} fighter{% if tier.count != 1 %}s{% endif %}
+    </p>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if not toolbar.has_active_filters %}
+<section class="toolbar-discovery-strip" aria-label="Quick fighter browse">
+  <a class="toolbar-chip toolbar-chip-link" href="{{ url_for('fighters', tier='Tier 1') }}">Tier 1</a>
+  <a class="toolbar-chip toolbar-chip-link" href="{{ url_for('fighters', tier='Tier 2') }}">Tier 2</a>
+  <a class="toolbar-chip toolbar-chip-link" href="{{ url_for('fighters', sort='points') }}">Highest points</a>
+  <a class="toolbar-chip toolbar-chip-link" href="{{ url_for('fighters', sort='cost') }}">Highest cost</a>
+  <a class="toolbar-chip toolbar-chip-link" href="{{ url_for('fighters', q='captain') }}">Search captains</a>
+</section>
+{% endif %}
+
+<div class="section-head">
+  <div>
+    <h2>Fighter Collection</h2>
+    <p>Card-led browsing for the active league, with tier cues and quick fantasy comparison built into every card.</p>
+  </div>
+</div>
+
+{% if not toolbar.has_active_filters %}
+<section class="landing-panel">
+  <div class="section-head compact-head">
+    <div>
+      <span class="eyebrow-chip">Top 3 Fighters</span>
+      <h2>Active Season Leaders</h2>
+      <p class="meta">A quick look at the current fighter podium using the live season ranking.</p>
+    </div>
+  </div>
+  {% if top_fighter_cards %}
+  <div class="top-fighter-grid fighter-card-track-grid">
+    {% for fighter in top_fighter_cards %}
+    {% set top_display = fighter.public_display %}
+    {{ render_fighter_card(
+      fighter,
+      top_display,
+      url_for('fighter_detail', fighter_id=fighter.id),
+      default_skins,
+      'Rank #' ~ fighter.rank,
+      top_display.summary,
+      'top-fighter-card'
+    ) }}
+    {% endfor %}
+  </div>
+  {% else %}
+  <article class="panel empty-state-card">
+    <h3>No fighter rankings yet.</h3>
+    <p class="meta">Top fighters will appear here once the active season has scored results.</p>
+  </article>
+  {% endif %}
+</section>
+{% endif %}
+
+{{ render_table_toolbar(toolbar) }}
+{{ render_tier_legend() }}
+
+<section class="card-grid fighter-card-track-grid viewport-scroll">
+{% if not rows %}
+  <article class="panel empty-state-card">
+    <h3>No fighters match your filters.</h3>
+    <p class="meta">Try a broader search, switch tiers, or clear the current filters. If you are looking for someone missing from the league, request them as a new fighter.</p>
+    <div class="hero-actions" style="justify-content: center; margin-top: 14px;">
+      <a class="button secondary" href="{{ toolbar.reset_url }}">Clear Filters</a>
+      <a class="button secondary" href="{{ url_for('request_new_fighter') }}">Request New Fighter</a>
+    </div>
+  </article>
+{% endif %}
+{% for r in rows %}
+  {% set public_display = public_fighter_display(r, 'leaderboard') %}
+  <div class="fighter-browse-card" style="--fighter-card-delay: {{ loop.index0 * 40 }}ms;">
+    {{ render_fighter_card(
+      r,
+      public_display,
+      url_for('fighter_detail', fighter_id=r.id, return_to=browse_return_to),
+      default_skins,
+      'Rank #' ~ r.rank,
+      public_display.summary,
+      '',
+      'Cost ' ~ r.cost_used
+    ) }}
+  </div>
+{% endfor %}
+</section>
+</div>
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero compact-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">{{ "New League" if is_new else "League Workspace" }}</span>
+      <h1>{{ "Create League" if is_new else league.name }}</h1>
+    </div>
+    {% if not is_new %}
+    <div class="summary-band">
+      <div class="mini-stat"><span>Status</span><strong>{{ league.status|title }}</strong></div>
+      <div class="mini-stat"><span>Players</span><strong>{{ league_players|length }}</strong></div>
+      <div class="mini-stat"><span>Teams</span><strong>{{ league_teams|length }}</strong></div>
+      <div class="mini-stat"><span>Admins</span><strong>{{ league_admin_rows|length }}</strong></div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<div class="league-workspace" style="margin-top: 20px;">
+<form method="post" class="panel form-grid league-settings-panel">
+  <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="action" value="save_league">
+
+  {% if is_new %}
+  <label>Starter Template
+    {% set current_template = league.starter_template if league and league.starter_template else 'blank' %}
+    <select name="starter_template">
+      {% for template in starter_templates %}
+      <option value="{{ template.key }}" {% if current_template == template.key %}selected{% endif %}>{{ template.label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <div class="field-note full">
+    <strong>Template guide</strong>
+    {% for template in starter_templates %}
+    <span><strong>{{ template.label }}:</strong> {{ template.description }}</span>
+    {% endfor %}
+    <span>Templates set starter defaults only. They do not copy fighters or player data from another league.</span>
+  </div>
+  {% endif %}
+
+  <label>League Name
+    <input type="text" name="name" value="{{ league.name if league else '' }}" required>
+  </label>
+
+  <label>Club Name
+    <input type="text" name="club_name" value="{{ league.club_name if league else '' }}" required>
+  </label>
+
+  <label>Slug
+    <input type="text" name="slug" value="{{ league.slug if league else '' }}" required>
+  </label>
+
+  <label>Status
+    <select name="status" required>
+      {% set current_status = league.status if league else 'pending' %}
+      {% for value in ['pending', 'active', 'inactive', 'archived'] %}
+      <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ value|title }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label>Maximum Players
+    <input type="number" name="max_players" min="0" value="{{ '' if not league or league.max_players is none else league.max_players }}">
+  </label>
+
+  <div class="field-note">
+    <strong>Team capacity</strong>
+    <span>Team quota follows the player quota in the one-team-per-player model.</span>
+  </div>
+
+  <label>Contact Email
+    <input type="email" name="contact_email" value="{{ league.contact_email if league and league.contact_email else '' }}">
+  </label>
+
+  <label>League Logo URL
+    <input type="url" name="logo_url" value="{{ league.logo_url if league and league.logo_url else '' }}" placeholder="https://example.com/league-logo.png">
+  </label>
+
+  <label style="grid-column: 1 / -1;">Description
+    <textarea name="description" rows="4">{{ league.description if league and league.description else '' }}</textarea>
+  </label>
+
+  {% if league and league.logo_url %}
+  <div style="grid-column: 1 / -1;">
+    <p class="meta">Current league logo preview</p>
+    <img src="{{ league.logo_url }}" alt="{{ league.name }} logo" style="max-height: 72px; max-width: 180px;">
+  </div>
+  {% endif %}
+
+  <div class="hero-actions" style="grid-column: 1 / -1;">
+    <button type="submit">{{ "Create League" if is_new else "Save Changes" }}</button>
+    <a class="button secondary" href="{{ url_for('admin_leagues') }}">Back to Leagues</a>
+  </div>
+</form>
+
+{% if not is_new %}
+<aside class="panel league-side-panel">
+  <h2>At a Glance</h2>
+  <div class="detail-list league-detail-list">
+    <div class="detail-row"><span>Club</span><strong>{{ league.club_name }}</strong></div>
+    <div class="detail-row"><span>Slug</span><strong>{{ league.slug }}</strong></div>
+    <div class="detail-row"><span>Player quota</span><strong>{% if league.max_players is not none %}{{ league_players|length }} / {{ league.max_players }}{% else %}Unlimited{% endif %}</strong></div>
+    <div class="detail-row"><span>Team capacity</span><strong>{% if league.max_teams is not none %}{{ league_teams|length }} / {{ league.max_teams }}{% else %}Unlimited{% endif %}</strong></div>
+    <div class="detail-row"><span>League admins</span><strong>{{ league_admin_rows|length }}</strong></div>
+  </div>
+  {% if league.logo_url %}
+  <div class="league-logo-preview-card">
+    <p class="meta">Header logo preview</p>
+    <img src="{{ league.logo_url }}" alt="{{ league.name }} logo" class="league-logo-preview">
+  </div>
+  {% endif %}
+</aside>
+</div>
+
+<section class="panel league-section-panel" style="margin-top: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h2>League Operations</h2>
+    </div>
+  </div>
+  <div class="card-grid" style="margin-top: 16px;">
+    <article class="card">
+      <h3>Fighters</h3>
+      <p class="meta">Open the fighter pool already scoped to this league.</p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('admin_fighters', league_id=league.id) }}">Open Fighters</a>
+      </div>
+    </article>
+    <article class="card">
+      <h3>Events</h3>
+      <p class="meta">Review scheduled events and scored results for this league.</p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('admin_events', league_id=league.id) }}">Open Events</a>
+      </div>
+    </article>
+    <article class="card">
+      <h3>Players</h3>
+      <p class="meta">See player access, claim status, and single-team ownership in this league.</p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('admin_players', league_id=league.id) }}">Open Players</a>
+      </div>
+    </article>
+    <article class="card">
+      <h3>Teams</h3>
+      <p class="meta">Review team builders and standings in this league.</p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('admin_teams', league_id=league.id) }}">Open Teams</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="panel league-section-panel" style="margin-top: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h2>League Admins</h2>
+      <p class="meta">Review current league admins here. Promote players from the league players page when you need to assign new admin access.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top: 16px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Username</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in league_admin_rows %}
+        <tr>
+          <td>{{ row.display_name }}</td>
+          <td>{{ row.username }}</td>
+          <td>
+            <form method="post" class="inline-form">
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="action" value="remove_admin">
+              <input type="hidden" name="user_id" value="{{ row.id }}">
+              <button type="submit" class="link-button">Remove Admin Access</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="table-empty-cell">No league admins assigned yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

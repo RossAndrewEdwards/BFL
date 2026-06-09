@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero compact-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Platform Setup</span>
+      <h1>Leagues</h1>
+      <p>Create, configure, and monitor every club league from one place. Jump from quota planning into league setup without switching sections.</p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('admin_league_new') }}">Create League</a>
+        <a class="button secondary" href="{{ url_for('admin_dashboard') }}">Back to Dashboard</a>
+      </div>
+    </div>
+    <div class="summary-band">
+      <div class="mini-stat"><span>Total leagues</span><strong>{{ rows|length }}</strong></div>
+      <div class="mini-stat"><span>Active leagues</span><strong>{{ rows|selectattr('status', 'equalto', 'active')|list|length }}</strong></div>
+      <div class="mini-stat"><span>Pending setup</span><strong>{{ rows|selectattr('status', 'equalto', 'pending')|list|length }}</strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="league-card-grid" style="margin-top: 20px;">
+  {% for row in rows %}
+  <article class="panel league-overview-card">
+    <div class="league-overview-topline">
+      <div>
+        <div class="pill-row">
+          <span class="pill brand">{{ row.status|title }}</span>
+          <span class="pill">{{ row.slug }}</span>
+        </div>
+        <h2>{{ row.name }}</h2>
+        <p class="meta">{{ row.club_name }}</p>
+      </div>
+      <a class="button secondary" href="{{ url_for('admin_league_edit', league_id=row.id) }}">Open League</a>
+    </div>
+
+    <div class="split-stats">
+      <div class="mini-stat">
+        <span>Players</span>
+        <strong>{{ row.player_count }}</strong>
+        <div class="meta">{% if row.max_players is not none %}Quota {{ row.max_players }}{% else %}Unlimited{% endif %}</div>
+      </div>
+      <div class="mini-stat">
+        <span>Teams</span>
+        <strong>{{ row.team_count }}</strong>
+        <div class="meta">{% if row.max_teams is not none %}Quota {{ row.max_teams }}{% else %}Unlimited{% endif %}</div>
+      </div>
+      <div class="mini-stat">
+        <span>Fighters</span>
+        <strong>{{ row.fighter_count }}</strong>
+      </div>
+      <div class="mini-stat">
+        <span>Results</span>
+        <strong>{{ row.result_count }}</strong>
+      </div>
+    </div>
+
+    <div class="pill-row league-overview-footer">
+      <span class="pill">League Admins {{ row.admin_count }}</span>
+      {% if row.max_players is not none %}
+      <span class="pill{% if row.player_count >= row.max_players %} warning{% endif %}">Player usage {{ row.player_count }}/{{ row.max_players }}</span>
+      {% endif %}
+      {% if row.max_teams is not none %}
+      <span class="pill{% if row.team_count >= row.max_teams %} warning{% endif %}">Team usage {{ row.team_count }}/{{ row.max_teams }}</span>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <article class="panel empty-state-card">
+    <span class="eyebrow-chip">No Leagues Yet</span>
+    <h2>Start by creating the first club league.</h2>
+    <p class="meta">Once a league exists, you can assign league admins, set quotas, and review players and teams from the same workspace.</p>
+    <div class="hero-actions">
+      <a class="button" href="{{ url_for('admin_league_new') }}">Create League</a>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

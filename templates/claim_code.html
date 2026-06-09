@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel narrow">
+  <h1>Claim Your Team</h1>
+  <form method="post" class="form-grid">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <label>Claim Code <input name="code" required></label>
+    <button type="submit">Continue</button>
+  </form>
+</section>
+{% endblock %}

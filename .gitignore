@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+league.db
+.env
+.tmp/
+.codex_app_stderr.log
+.codex_app_stdout.log
+.vscode/
+node_modules/
+playwright-report/
+test-results/

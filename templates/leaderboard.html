@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% from "_card_templates.html" import render_fighter_card, render_team_card %}
+{% block content %}
+<section class="hero compact-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">League Leaderboard</span>
+      <h1>Track fighters and fantasy teams in one place.</h1>
+      <p class="meta">This view keeps the active league focused on points-first standings, recent movement, and the fantasy battles shaping the table right now.</p>
+    </div>
+    <div class="hero-meta">
+      <div class="summary-band">
+        <div class="mini-stat"><span>Fighters</span><strong>{{ fighter_rows|length }}</strong></div>
+        <div class="mini-stat"><span>Teams</span><strong>{{ team_rows|length }}</strong></div>
+        <div class="mini-stat"><span>Best team score</span><strong>{{ team_leader.points if team_leader else 0 }}</strong></div>
+        {% if own_team %}
+        <div class="mini-stat"><span>Your rank</span><strong>{% if own_team.rank %}#{{ own_team.rank }}{% else %}--{% endif %}</strong></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if own_team or rival_team or fighter_movers or team_movers %}
+<section class="landing-feature-grid leaderboard-story-grid">
+  {% if own_team %}
+  <article class="landing-panel leaderboard-story-card">
+    <div class="section-head compact-section-head">
+      <div>
+        <span class="eyebrow-chip">Your Team Lens</span>
+        <h2>{{ own_team.team_name }}</h2>
+        <p>See how your active league roster is holding position right now.</p>
+      </div>
+    </div>
+    {{ render_team_card(
+      own_team,
+      url_for('team_detail', team_id=own_team.id),
+      default_skins,
+      'Player ' ~ (own_team.player_name or 'Unassigned') ~ ' - Manager ' ~ own_team.manager,
+      [('Points', own_team.points), ('Rank', '#' ~ own_team.rank if own_team.rank else '--')],
+      'leaderboard-own-team-card',
+      own_team.movement.label if own_team.movement else 'League Team',
+      'Your current league build and score in the active standings.',
+      4,
+      'Latest event gain: ' ~ own_team.event_history[0].event_name ~ ' - +' ~ own_team.event_history[0].event_points if own_team.event_history else none
+    ) }}
+  </article>
+  {% endif %}
+
+  <article class="landing-panel leaderboard-story-card">
+    <div class="section-head compact-section-head">
+      <div>
+        <span class="eyebrow-chip">League Pulse</span>
+        <h2>{% if rival_team %}Closest rival{% else %}Biggest movers{% endif %}</h2>
+        <p>{% if rival_team %}The nearest team around your current standing in the active league table.{% else %}The latest scored event is shifting the table in these places.{% endif %}</p>
+      </div>
+    </div>
+    {% if rival_team %}
+    <div class="leaderboard-rival-callout">
+      <p class="meta">Rival team</p>
+      <h3><a href="{{ url_for('team_detail', team_id=rival_team.id) }}">{{ rival_team.team_name }}</a></h3>
+      <div class="summary-band">
+        <div class="mini-stat"><span>Rank</span><strong>{% if rival_team.rank %}#{{ rival_team.rank }}{% else %}--{% endif %}</strong></div>
+        <div class="mini-stat"><span>Points</span><strong>{{ rival_team.points }}</strong></div>
+        <div class="mini-stat"><span>Gap</span><strong>{{ (rival_team.points - own_team.points)|abs if own_team else 0 }}</strong></div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="leaderboard-mover-stack">
+      {% for team in team_movers %}
+      <div class="leaderboard-mover-card">
+        <span class="rank-movement-badge is-{{ team.movement.direction }}">{{ team.movement.label }}</span>
+        <strong>{{ team.team_name }}</strong>
+        <p class="meta">Now {% if team.rank %}#{{ team.rank }}{% else %}unranked{% endif %} after +{{ team.event_points }} event points.</p>
+      </div>
+      {% endfor %}
+      {% for fighter in fighter_movers[:2] %}
+      <div class="leaderboard-mover-card">
+        <span class="rank-movement-badge is-{{ fighter.movement.direction }}">{{ fighter.movement.label }}</span>
+        <strong>{{ fighter.name }}</strong>
+        <p class="meta">Now {% if fighter.rank %}#{{ fighter.rank }}{% else %}unranked{% endif %} after +{{ fighter.event_points }} event points.</p>
+      </div>
+      {% endfor %}
+      {% if latest_event %}
+      <p class="meta">Movement cues are based on the latest scored event: <strong>{{ latest_event.event_name }}</strong>.</p>
+      {% endif %}
+    </div>
+  </article>
+</section>
+{% endif %}
+
+<section class="leaderboard-page-grid">
+  <article class="landing-panel leaderboard-table-panel">
+    <div class="section-head compact-section-head">
+      <div>
+        <span class="eyebrow-chip">Fighters</span>
+        <h2>Fighter Rankings</h2>
+        <p>League-scoped fighter points with quick access to full fighter detail.</p>
+      </div>
+    </div>
+    <form method="get" action="{{ url_for('leaderboard') }}" class="leaderboard-search-form">
+      <label class="toolbar-field toolbar-search">
+        <span>Search fighters</span>
+        <input type="search" name="fighter_q" value="{{ fighter_query }}" placeholder="Find a fighter by name or nickname">
+      </label>
+      <input type="hidden" name="team_q" value="{{ team_query }}">
+      <div class="hero-actions">
+        <button type="submit">Search</button>
+        {% if fighter_query or team_query %}
+        <a class="button secondary" href="{{ url_for('leaderboard') }}">Reset</a>
+        {% endif %}
+      </div>
+    </form>
+    <p class="meta">Showing {{ fighter_rows|length }} of {{ fighter_total_count }} fighters.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Fighter</th>
+            <th>Tier</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fighter in fighter_rows %}
+          {% set fighter_rank = fighter.rank if fighter.rank else 999 %}
+          <tr class="leaderboard-row{% if fighter_rank <= 3 %} leaderboard-top-{{ fighter_rank }}{% endif %}">
+            <td>
+              <strong>#{{ fighter.rank if fighter.rank else '--' }}</strong>
+              {% if fighter.movement %}
+              <span class="rank-movement-badge is-{{ fighter.movement.direction }}">{{ fighter.movement.label }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <button
+                type="button"
+                class="leaderboard-name-button"
+                data-overlay-open="fighter-{{ fighter.id }}"
+              >{{ fighter.name }}</button>
+            </td>
+            <td>{{ fighter.tier or 'Unranked' }}</td>
+            <td>{{ fighter.total_points }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="table-empty-cell">{% if fighter_query %}No fighters match that search yet.{% else %}No fighters are available in this league yet.{% endif %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="landing-panel leaderboard-table-panel">
+    <div class="section-head compact-section-head">
+      <div>
+        <span class="eyebrow-chip">Teams</span>
+        <h2>Fantasy Team Rankings</h2>
+        <p>League-scoped team standings with direct links into each fantasy roster.</p>
+      </div>
+    </div>
+    <form method="get" action="{{ url_for('leaderboard') }}" class="leaderboard-search-form">
+      <label class="toolbar-field toolbar-search">
+        <span>Search teams</span>
+        <input type="search" name="team_q" value="{{ team_query }}" placeholder="Find a team or player">
+      </label>
+      <input type="hidden" name="fighter_q" value="{{ fighter_query }}">
+      <div class="hero-actions">
+        <button type="submit">Search</button>
+        {% if fighter_query or team_query %}
+        <a class="button secondary" href="{{ url_for('leaderboard') }}">Reset</a>
+        {% endif %}
+      </div>
+    </form>
+    <p class="meta">Showing {{ team_rows|length }} of {{ team_total_count }} teams.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Team</th>
+            <th>Player</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for team in team_rows %}
+          {% set team_rank = team.rank if team.rank else 999 %}
+          <tr class="{% if team.status != 'VALID' %}invalid {% endif %}leaderboard-row{% if team_rank <= 3 %} leaderboard-top-{{ team_rank }}{% endif %}{% if own_team and own_team.id == team.id %} leaderboard-row-own{% endif %}">
+            <td>
+              <strong>{% if team.rank %}#{{ team.rank }}{% else %}--{% endif %}</strong>
+              {% if team.movement %}
+              <span class="rank-movement-badge is-{{ team.movement.direction }}">{{ team.movement.label }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <button
+                type="button"
+                class="leaderboard-name-button"
+                data-overlay-open="team-{{ team.id }}"
+              >{{ team.team_name }}</button>
+              {% if own_team and own_team.id == team.id %}
+              <span class="table-inline-tag">Your team</span>
+              {% endif %}
+            </td>
+            <td>{{ team.player_name or 'Unassigned' }}</td>
+            <td>{{ team.points }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="table-empty-cell">{% if team_query %}No fantasy teams match that search yet.{% else %}No fantasy teams are available in this league yet.{% endif %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<div class="leaderboard-overlay-layer" data-overlay-layer hidden>
+  {% for fighter in fighter_rows %}
+  {% set public_display = public_fighter_display(fighter, 'leaderboard') %}
+  <section class="leaderboard-overlay-card" data-overlay-card="fighter-{{ fighter.id }}" hidden>
+    <button type="button" class="leaderboard-overlay-close" data-overlay-close aria-label="Close fighter card">Close</button>
+    <div class="leaderboard-overlay-content">
+      {{ render_fighter_card(
+        fighter,
+        public_display,
+        url_for('fighter_detail', fighter_id=fighter.id),
+        default_skins,
+        'Rank #' ~ (fighter.rank if fighter.rank else '--')
+      ) }}
+    </div>
+  </section>
+  {% endfor %}
+
+  {% for team in team_rows %}
+  <section class="leaderboard-overlay-card" data-overlay-card="team-{{ team.id }}" hidden>
+    <button type="button" class="leaderboard-overlay-close" data-overlay-close aria-label="Close team card">Close</button>
+    <div class="leaderboard-overlay-content">
+      {{ render_team_card(
+        team,
+        url_for('team_detail', team_id=team.id),
+        default_skins,
+        'Player ' ~ (team.player_name or 'Unassigned') ~ ' - Manager ' ~ team.manager,
+        [('Points', team.points), ('Glory', team.trait_totals[0].value)],
+        'leaderboard-team-card'
+      ) }}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (() => {
+    const layer = document.querySelector("[data-overlay-layer]");
+    if (!layer) return;
+
+    const cards = Array.from(layer.querySelectorAll("[data-overlay-card]"));
+    const closeAll = () => {
+      cards.forEach((card) => {
+        card.hidden = true;
+      });
+      layer.hidden = true;
+      document.body.classList.remove("overlay-open");
+    };
+
+    document.querySelectorAll("[data-overlay-open]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.getAttribute("data-overlay-open");
+        cards.forEach((card) => {
+          card.hidden = card.getAttribute("data-overlay-card") !== target;
+        });
+        layer.hidden = false;
+        document.body.classList.add("overlay-open");
+      });
+    });
+
+    layer.addEventListener("click", (event) => {
+      if (event.target === layer || event.target.hasAttribute("data-overlay-close")) {
+        closeAll();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !layer.hidden) {
+        closeAll();
+      }
+    });
+  })();
+</script>
+{% endblock %}

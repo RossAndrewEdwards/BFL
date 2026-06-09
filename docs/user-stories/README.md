@@ -40,7 +40,7 @@ It supports three main user types:
 - `US-016` to `US-021`, `US-033` to `US-035`, `US-040`, `US-041`, `US-064`, `US-065`, `US-076` to `US-079`: player membership, teams, fighter profiles, requests, and personal notifications
 - `US-026` to `US-028`, `US-030` to `US-032`, `US-036` to `US-039`, `US-068`: workspaces, admin hierarchy, and navigation
 - `US-044` to `US-063`, `US-071`, `US-080`, `US-081`: shared-site UX, leaderboard redesign, shared card templates, collectible-card direction, ranking/search, and theme choice
-- `US-083` to `US-112`: app-like interaction design, card browsing behaviour, dashboard UX, visual leaderboard behaviour, discovery, mobile experience, and accessibility polish
+- `US-083` to `US-112`, plus `US-091A`: app-like interaction design, card browsing behaviour, shared trading-card sizing, dashboard UX, visual leaderboard behaviour, discovery, mobile experience, and accessibility polish
 
 ## Follow-Up Planning Note
 

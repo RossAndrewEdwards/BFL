@@ -1,0 +1,13 @@
+{% macro render_public_fighter_summary(fighter, display) %}
+<div class="split-stats fighter-public-stats" data-fighter-public-summary="true">
+  {% for stat in display.stats %}
+  <div class="mini-stat">
+    <span>{{ stat.label }}</span>
+    <strong>{{ stat.value }}</strong>
+  </div>
+  {% endfor %}
+</div>
+<div class="pill-row fighter-card-footer">
+  <span class="pill">{{ display.spotlight_label }}</span>
+</div>
+{% endmacro %}

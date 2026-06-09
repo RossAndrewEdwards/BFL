@@ -94,6 +94,17 @@ Acceptance criteria:
 - The card balances identity details with fantasy comparison signals.
 - Extra detail can move into the profile if showing it on the card would make the card feel cluttered.
 
+### US-091A Keep fighter cards at a true trading-card size everywhere
+
+As a player, I want fighter cards to keep the same recognisable trading-card size across the app so that card browsing feels coherent and collectible instead of changing shape from page to page.
+
+Acceptance criteria:
+
+- Fighter cards use one shared baseline size and aspect ratio across homepage, fighter browse, leaderboard overlays, event views, and other player-facing card surfaces.
+- Page layouts should adapt around that baseline card size rather than shrinking, stretching, or reshaping fighter cards differently on each page.
+- The chosen size should feel close to a real trading-card object rather than a generic responsive content tile.
+- Smaller screens can stack or scroll cards differently, but the card itself should still preserve its shared trading-card proportions.
+
 ## Epic 13: Team-Building Interaction
 
 ### US-092 Build a team through an interactive roster experience

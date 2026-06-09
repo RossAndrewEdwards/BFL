@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel" style="margin-bottom: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <span class="eyebrow-chip">Live Scoring Workspace</span>
+      <h1>{{ banner.event_name }}</h1>
+      <p class="meta">
+        {{ banner.event_date }}
+        {% if banner.location %} · {{ banner.location }}{% endif %}
+        {% if banner.source_kind == 'calendar' %} · Synced from the Buhurt calendar{% else %} · Manual event{% endif %}
+      </p>
+      {% if banner.summary %}
+      <p class="meta">{{ banner.summary }}</p>
+      {% endif %}
+    </div>
+    <div class="hero-actions">
+      <a class="button secondary" href="{{ url_for('admin_events') }}">Back to Events</a>
+      {% if banner.source_url %}
+      <a class="button secondary" href="{{ banner.source_url }}" target="_blank" rel="noopener">Open Source</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="dashboard-grid" style="margin-bottom: 20px;">
+  <article class="dashboard-card">
+    <span class="label">League fighters scored</span>
+    <strong>{{ fighters_with_results }} / {{ total_fighters_in_league }}</strong>
+  </article>
+  <article class="dashboard-card">
+    <span class="label">Complete rows</span>
+    <strong>{{ complete_count }}</strong>
+  </article>
+  <article class="dashboard-card">
+    <span class="label">Draft rows</span>
+    <strong>{{ draft_count }}</strong>
+  </article>
+</section>
+
+<section class="panel" style="margin-bottom: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h2>Buhurt Calendar {{ calendar_year }}</h2>
+      <p class="meta">Full-year calendar view for this league, including past events, today, and upcoming fixtures synced from the shared Buhurt calendar.</p>
+    </div>
+  </div>
+  {% if calendar_year_events %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Event</th>
+          <th>Calendar Status</th>
+          <th>Scoring Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for calendar_event in calendar_year_events %}
+        <tr{% if calendar_event.is_current %} class="table-row-highlight"{% endif %}>
+          <td>{{ calendar_event.event_date }}</td>
+          <td>
+            <strong>{{ calendar_event.event_name }}</strong>
+            {% if calendar_event.location %}
+            <div class="meta">{{ calendar_event.location }}</div>
+            {% endif %}
+          </td>
+          <td>{{ calendar_event.calendar_status }}</td>
+          <td>{{ calendar_event.scoring_status }}</td>
+          <td>
+            {% if calendar_event.is_current %}
+            <span class="eyebrow-chip">Current Workspace</span>
+            {% else %}
+            <a href="{{ url_for('admin_event_workspace', banner_id=calendar_event.id) }}">Open Workspace</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="meta">No synced Buhurt calendar events are available for this year yet.</p>
+  {% endif %}
+</section>
+
+<section class="panel" style="margin-bottom: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h2>Create or Extend a Group</h2>
+      <p class="meta">Name a group first, add the fighters you want in it, then score everyone in that group together in one save.</p>
+    </div>
+    {% if selected_group_name %}
+    <div class="hero-actions">
+      <a class="button secondary" href="{{ url_for('admin_event_workspace', banner_id=banner.id) }}">Clear Group Focus</a>
+    </div>
+    {% endif %}
+  </div>
+  <div class="event-workspace-topline">
+    <article class="field-note">
+      <strong>Next up</strong>
+      <span>{{ remaining_fighters|length }} fighters still have no row in this event.</span>
+    </article>
+    {% if remaining_fighters %}
+    <article class="field-note">
+      <strong>Remaining fighters</strong>
+      <span>{{ remaining_fighters[:6]|map(attribute='name')|join(', ') }}{% if remaining_fighters|length > 6 %}, and more{% endif %}</span>
+    </article>
+    {% endif %}
+  </div>
+  <form method="post" class="form-grid">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="workspace_action" value="add_group_fighters">
+    <label>Group / Match
+      <input type="text" name="group_name" value="{{ selected_group_name or '' }}" placeholder="Example: Group A">
+    </label>
+    <div class="field-note">
+      <strong>Choose fighters for this group</strong>
+      {% if remaining_fighters %}
+      <div class="group-fighter-picker">
+        {% for fighter in remaining_fighters %}
+        <label class="checkbox-chip">
+          <input type="checkbox" name="fighter_ids" value="{{ fighter.id }}">
+          <span>{{ fighter.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% else %}
+      <span>All fighters already have a row in this event. Use the group tables below to score them together.</span>
+      {% endif %}
+    </div>
+    <div class="hero-actions">
+      <button type="submit">Add Fighters To Group</button>
+    </div>
+  </form>
+</section>
+
+{% for group in groups %}
+<section class="panel" style="margin-bottom: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h2>{{ group.name }}</h2>
+      <p class="meta">{{ group.complete_count }} complete · {{ group.draft_count }} draft</p>
+    </div>
+    <div class="hero-actions">
+      <a class="button secondary" href="{{ url_for('admin_event_workspace', banner_id=banner.id, group_name=group.name if group.name != 'Ungrouped' else '') }}">Focus Group</a>
+    </div>
+  </div>
+  {% if remaining_fighters %}
+  <form method="post" class="form-grid" style="margin-bottom: 16px;">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="workspace_action" value="add_group_fighters">
+    <input type="hidden" name="group_name" value="{{ '' if group.name == 'Ungrouped' else group.name }}">
+    <div class="field-note">
+      <strong>Add more fighters to {{ group.name }}</strong>
+      <div class="group-fighter-picker">
+        {% for fighter in remaining_fighters %}
+        <label class="checkbox-chip">
+          <input type="checkbox" name="fighter_ids" value="{{ fighter.id }}">
+          <span>{{ fighter.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="hero-actions">
+      <button type="submit" class="button secondary">Add More Fighters</button>
+    </div>
+  </form>
+  {% endif %}
+  <form method="post" class="group-score-form">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="workspace_action" value="save_group_scores">
+    <input type="hidden" name="group_name" value="{{ '' if group.name == 'Ungrouped' else group.name }}">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="workspace-sticky-col workspace-sticky-col-head">Fighter</th>
+            <th>Status</th>
+            {% for stat in workspace_stat_columns %}
+            <th title="{{ stat.label }}">
+              <span class="workspace-stat-head-short">{{ stat.short_label }}</span>
+              <span class="workspace-stat-head-label">{{ stat.label }}</span>
+            </th>
+            {% endfor %}
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in group.rows %}
+          <tr>
+            <td class="workspace-sticky-col workspace-fighter-name">{{ row.fighter_name }}</td>
+            <td>{{ 'Draft' if row.entry_status == 'draft' else 'Complete' }}</td>
+            {% for stat in workspace_stat_columns %}
+            <td>
+              <div class="workspace-stat-stepper">
+                <button type="button" class="workspace-stat-button" data-step="-1" data-target="result_{{ row.id }}_{{ stat.key }}" aria-label="Subtract 1 from {{ stat.label }} for {{ row.fighter_name }}">-</button>
+                <input type="number" min="0" name="result_{{ row.id }}_{{ stat.key }}" value="{{ row[stat.key] }}" aria-label="{{ stat.label }} for {{ row.fighter_name }}">
+                <button type="button" class="workspace-stat-button" data-step="1" data-target="result_{{ row.id }}_{{ stat.key }}" aria-label="Add 1 to {{ stat.label }} for {{ row.fighter_name }}">+</button>
+              </div>
+            </td>
+            {% endfor %}
+            <td>
+              <a href="{{ url_for('admin_event_edit', event_id=row.id) }}">Full Edit</a>
+              <button class="link-button" type="submit" formaction="{{ url_for('admin_event_delete', event_id=row.id) }}" formmethod="post">Delete</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="hero-actions" style="margin-top: 16px;">
+      <button type="submit" name="submit_action" value="draft" class="button secondary">Save Group Draft</button>
+      <button type="submit" name="submit_action" value="complete" data-confirm-complete="true">Mark Group Complete</button>
+    </div>
+    <p class="meta workspace-confirm-note">Publishing a group as complete means these results will drive the live event view and leaderboard movement for this league.</p>
+  </form>
+</section>
+{% else %}
+<section class="panel">
+  <h2>No Results Yet</h2>
+  <p class="meta">Start by creating a group above, add the fighters you want in that group, and then score the whole group together.</p>
+</section>
+{% endfor %}
+<script>
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest(".workspace-stat-button");
+    if (!button) return;
+    const targetName = button.getAttribute("data-target");
+    const input = document.querySelector('input[name="' + targetName + '"]');
+    if (!input) return;
+    const step = parseInt(button.getAttribute("data-step") || "0", 10);
+    const min = parseInt(input.getAttribute("min") || "0", 10);
+    const currentValue = parseInt(input.value || "0", 10);
+    const nextValue = Math.max(min, currentValue + step);
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("[data-confirm-complete]");
+    if (!button) return;
+    if (!window.confirm("Mark this whole group complete and publish the result changes to the league?")) {
+      event.preventDefault();
+    }
+  });
+</script>
+{% endblock %}

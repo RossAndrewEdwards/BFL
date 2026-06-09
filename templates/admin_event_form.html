@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>Edit Event Result</h1>
+  <form method="post" class="form-grid event-grid">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <label>Scheduled Event
+      <select name="scheduled_event_id">
+        <option value="">No scheduled event</option>
+        {% for event in scheduled_events %}
+        <option value="{{ event.id }}" {{ 'selected' if row.scheduled_event_id == event.id else '' }}>{{ event.display_label }} - {{ event.status_label }} - {{ event.fighter_result_count }} results</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Event Name
+      <input type="text" name="event_name" value="{{ row.event_name }}">
+    </label>
+    <label>Event Date
+      <input type="date" name="event_date" value="{{ row.event_date }}">
+    </label>
+    <label>Group / Match
+      <input type="text" name="group_name" value="{{ row.group_name or '' }}">
+    </label>
+    <label>Entry Status
+      <select name="entry_status">
+        <option value="draft" {{ 'selected' if row.entry_status == 'draft' else '' }}>Draft</option>
+        <option value="complete" {{ 'selected' if row.entry_status == 'complete' else '' }}>Complete</option>
+      </select>
+    </label>
+    <label>Fighter
+      <select name="fighter_id">
+        {% for fighter in fighters %}
+        <option value="{{ fighter.id }}" {{ 'selected' if row.fighter_id == fighter.id else '' }}>{{ fighter.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {% for key,label in stat_fields %}
+    <label>{{ label }} <input type="number" name="{{ key }}" value="{{ row[key] }}"></label>
+    {% endfor %}
+    <div class="hero-actions">
+      <button type="submit">Save Event Result</button>
+      {% if row.scheduled_event_id %}
+      <a class="button secondary" href="{{ url_for('admin_event_workspace', banner_id=row.scheduled_event_id) }}">Back to Workspace</a>
+      {% else %}
+      <a class="button secondary" href="{{ url_for('admin_events') }}">Cancel</a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+{% endblock %}

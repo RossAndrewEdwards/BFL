@@ -1,0 +1,19 @@
+{% macro render_tier_badge(tier, theme=None, extra_class='') %}
+{% set tier_meta = theme or tier_theme(tier) %}
+<span class="tier-badge {{ tier_meta.class_name }} {{ extra_class }}">{{ tier or tier_meta.label }}</span>
+{% endmacro %}
+
+{% macro render_tier_legend(items=None) %}
+{% set legend_items = items or tier_legend_items %}
+<section class="tier-legend" aria-label="Fighter tier colour legend">
+  <span class="tier-legend-label">Tier legend</span>
+  <div class="tier-legend-items">
+    {% for item in legend_items %}
+    <span class="tier-legend-item">
+      <span class="tier-swatch {{ item.class_name }}" aria-hidden="true"></span>
+      <span>{{ item.label }} · {{ item.legend }}</span>
+    </span>
+    {% endfor %}
+  </div>
+</section>
+{% endmacro %}

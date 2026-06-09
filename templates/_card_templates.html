@@ -1,0 +1,142 @@
+{% from "_fighter_public_display.html" import render_public_fighter_summary %}
+{% from "_image_attribution.html" import image_attribution %}
+
+{% macro render_fighter_card(fighter, public_display, detail_url, default_skins, eyebrow_text=None, summary_text=None, card_class="", submeta_text=None) %}
+{% set fighter_role = fighter.role_or_weapon or fighter.preferred_role or fighter.fighting_style or 'League Fighter' %}
+{% set fighter_edition = fighter.tier or 'Open Division' %}
+<article class="fighter-chip fighter-card-shell shared-fighter-card collector-card {{ card_class }} {{ fighter.tier_theme.class_name }}">
+  <div class="fighter-card-hero" style="--fighter-card-image: url('{{ fighter.image_url or default_skins.fighter.url }}');" role="img" aria-label="{{ fighter.name }} profile image">
+    <div class="collector-card-foil" aria-hidden="true"></div>
+    <div class="collector-card-topline">
+      <span class="collector-card-type">Fighter Card</span>
+      <span class="collector-card-serial">{{ fighter_edition }} Edition</span>
+    </div>
+    <div class="fighter-card-rank-badge {{ 'is-muted' if not fighter.rank else '' }}">
+      {% if fighter.rank %}#{{ fighter.rank }}{% else %}--{% endif %}
+    </div>
+    <div class="collector-card-corner collector-card-corner-left">
+      <span class="collector-card-corner-label">Role</span>
+      <strong>{{ fighter_role }}</strong>
+    </div>
+    <div class="collector-card-corner collector-card-corner-right">
+      <span class="collector-card-corner-label">Series</span>
+      <strong>{{ fighter.joined_year or 'Modern' }}</strong>
+    </div>
+    <div class="fighter-card-overlay">
+      <div class="ranking-meta-line fighter-card-overlay-meta">
+        {% if fighter.tier %}
+        <span>{{ fighter.tier }}</span>
+        {% endif %}
+        {% if eyebrow_text %}
+        <span>{{ eyebrow_text }}</span>
+        {% endif %}
+      </div>
+      <div class="collector-title-plate">
+        <h3><a href="{{ detail_url }}">{{ fighter.name }}</a></h3>
+      </div>
+    </div>
+  </div>
+  <div class="collector-card-lower">
+  {{ image_attribution(fighter.image_credit, fighter.image_source_url, default_skins.fighter.credit if not fighter.image_url else '', default_skins.fighter.source if not fighter.image_url else '') }}
+{% if submeta_text %}
+  <p class="meta fighter-card-submeta">{{ submeta_text }}</p>
+  {% elif fighter.nickname or fighter.role_or_weapon or fighter.preferred_role or fighter.fighting_style %}
+  <p class="meta fighter-card-submeta">{{ fighter.nickname or fighter.role_or_weapon or fighter.preferred_role or fighter.fighting_style }}</p>
+  {% endif %}
+  {% set resolved_summary = summary_text if summary_text is not none else public_display.summary %}
+  {% if resolved_summary and resolved_summary != 'None' %}
+  <p class="meta fighter-card-summary">{{ resolved_summary }}</p>
+  {% endif %}
+  <div class="collector-chip-row">
+    <span class="collector-chip">Rank {% if fighter.rank %}#{{ fighter.rank }}{% else %}Unranked{% endif %}</span>
+    <span class="collector-chip">{{ fighter_role }}</span>
+    <span class="collector-chip">{{ fighter_edition }}</span>
+  </div>
+  <div class="collector-card-divider" aria-hidden="true"></div>
+  {{ render_public_fighter_summary(fighter, public_display) }}
+  </div>
+</article>
+{% endmacro %}
+
+{% macro render_team_card(team, detail_url, default_skins, subtitle_text=None, stat_pairs=None, card_class="", eyebrow_text=None, summary_text=None, max_pills=5, latest_event_text=None) %}
+{% set team_image = url_for('static', filename=team.image_path) if team.image_path else default_skins.team.url %}
+{% set resolved_subtitle = subtitle_text if subtitle_text is not none else 'Player ' ~ (team.player_name or 'Unassigned') ~ ' · Manager ' ~ team.manager %}
+{% set resolved_eyebrow = eyebrow_text if eyebrow_text is not none else (team.status if team.status else 'Fantasy Team') %}
+{% set resolved_summary = summary_text if summary_text is not none else ('Current fantasy score ' ~ team.points ~ '.') %}
+{% if stat_pairs is none %}
+  {% set stat_pairs = [('Points', team.points), ('Glory', team.trait_totals[0].value), ('Synergy', team.trait_totals[5].value)] %}
+{% endif %}
+<article class="team-card shared-team-card collector-card {{ 'invalid' if team.status and team.status != 'VALID' else '' }} {{ card_class }}">
+  <a class="shared-team-card-link" href="{{ detail_url }}">
+    <div class="team-card-hero" style="--team-card-image: url('{{ team_image }}');" role="img" aria-label="{{ team.team_name }} team image">
+      <div class="collector-card-foil" aria-hidden="true"></div>
+      <div class="collector-card-topline">
+        <span class="collector-card-type">Fantasy Team Card</span>
+        <span class="collector-card-serial">{% if team.rank %}Rank #{{ team.rank }}{% else %}League Team{% endif %}</span>
+      </div>
+      <div class="team-card-rank-badge {{ 'is-muted' if not (team.event_rank or team.rank) else '' }}">
+        {% if team.event_rank %}
+        #{{ team.event_rank }}
+        {% elif team.rank %}
+        #{{ team.rank }}
+        {% else %}
+        --
+        {% endif %}
+      </div>
+      <div class="team-card-emblem" aria-hidden="true">
+        <span>{{ (team.team_name or 'T')[:2]|upper }}</span>
+      </div>
+      <div class="collector-card-corner collector-card-corner-left">
+        <span class="collector-card-corner-label">Owner</span>
+        <strong>{{ team.player_name or 'Open Slot' }}</strong>
+      </div>
+      <div class="collector-card-corner collector-card-corner-right">
+        <span class="collector-card-corner-label">Build</span>
+        <strong>{{ team.manager }}</strong>
+      </div>
+      <div class="team-card-overlay">
+        <div class="team-card-overlay-meta">
+          <span class="pill {{ 'success' if team.status == 'VALID' else 'warning' }}">{{ resolved_eyebrow }}</span>
+        </div>
+        <div class="collector-title-plate">
+          <h2>{{ team.team_name }}</h2>
+        </div>
+        <p class="team-card-overlay-subtitle">{{ resolved_subtitle }}</p>
+      </div>
+    </div>
+    <div class="collector-card-lower">
+    {{ image_attribution(team.image_credit, team.image_source_url, default_skins.team.credit if not team.image_path else '', default_skins.team.source if not team.image_path else '') }}
+    <p class="meta team-card-summary">{{ resolved_summary }}</p>
+    <div class="collector-chip-row">
+      <span class="collector-chip">{% if team.rank %}League Rank #{{ team.rank }}{% else %}League Team{% endif %}</span>
+      <span class="collector-chip">{{ team.player_name or 'Open Slot' }}</span>
+      <span class="collector-chip">{{ team.manager }}</span>
+    </div>
+    <div class="collector-card-divider" aria-hidden="true"></div>
+    <div class="split-stats public-team-stats">
+      {% for label, value in stat_pairs %}
+      <div class="mini-stat"><span>{{ label }}</span><strong>{{ value }}</strong></div>
+      {% endfor %}
+    </div>
+    {% if team.trait_totals is defined and team.trait_totals %}
+    <div class="split-stats fighter-public-stats">
+      {% for stat in team.trait_totals[:6] %}
+      <div class="mini-stat"><span>{{ stat.label }}</span><strong>{{ stat.value }}</strong></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if team.fighters is defined and team.fighters %}
+    <div class="pill-row">
+      {% for fighter in team.fighters[:max_pills] %}
+      <span class="pill">{{ fighter.name }}</span>
+      {% endfor %}
+      {% if team.fighters|length > max_pills %}<span class="pill">+{{ team.fighters|length - max_pills }} more</span>{% endif %}
+    </div>
+    {% endif %}
+    {% if latest_event_text %}
+    <p class="meta shared-team-card-latest">{{ latest_event_text }}</p>
+    {% endif %}
+    </div>
+  </a>
+</article>
+{% endmacro %}
