@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel" style="margin-bottom: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h1>Fighter Awards</h1>
+      <p class="meta">Record medals and special awards outside the event scoring workspace.</p>
+    </div>
+    <div class="hero-actions">
+      {% if selected_scope_league %}
+      <a class="button secondary" href="{{ url_for('admin_league_edit', league_id=selected_scope_league.id) }}">Back to League Workspace</a>
+      {% elif league %}
+      <a class="button secondary" href="{{ url_for('admin_my_league') }}">Back to My League</a>
+      {% endif %}
+      {% if league %}
+      <a class="button secondary" href="{{ url_for('admin_fighters', league_id=league.id if can_choose_league else None) }}">Back to Fighters</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% if can_choose_league %}
+<section class="panel" style="margin-bottom: 20px;">
+  <form method="get" action="{{ url_for('admin_fighter_awards') }}" class="inline-form">
+    <label>League
+      <select name="league_id" style="min-width: 240px;">
+        <option value="">Choose a league</option>
+        {% for option in league_options %}
+        <option value="{{ option.id }}" {% if league and option.id == league.id %}selected{% endif %}>{{ option.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit" class="button secondary">Open Award Workspace</button>
+  </form>
+</section>
+{% endif %}
+
+{% if not league %}
+<section class="panel">
+  <p class="meta">Choose a league to record ad hoc medals and awards.</p>
+</section>
+{% else %}
+<section class="summary-band training-summary">
+  <div class="mini-stat"><span>League</span><strong>{{ league.name }}</strong></div>
+  <div class="mini-stat"><span>Recent awards</span><strong>{{ honours|length }}</strong></div>
+  <div class="mini-stat"><span>Fighters</span><strong>{{ fighters|length }}</strong></div>
+</section>
+
+<div class="workspace-grid training-workspace-grid">
+  <section class="panel training-group-create-panel">
+    <div class="section-head compact-section-head">
+      <div>
+        <h2>Record Award</h2>
+        <p class="meta">Use this for honours that should count on the fighter record without creating an event result.</p>
+      </div>
+    </div>
+    <form method="post" action="{{ url_for('admin_fighter_awards') }}" class="form-grid">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+      {% if can_choose_league %}
+      <input type="hidden" name="league_id" value="{{ league.id }}">
+      {% endif %}
+      <label class="full">Fighter
+        <select name="fighter_id" required>
+          <option value="">Choose a fighter</option>
+          {% for fighter in fighters %}
+          <option value="{{ fighter.id }}">{{ fighter.name }}{% if fighter.nickname %} ({{ fighter.nickname }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Honour Type
+        <select name="honour_type" required>
+          {% for value, label in honour_type_options %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Units
+        <input type="number" name="units" min="1" value="1" required>
+      </label>
+      <label>Awarded On
+        <input type="date" name="awarded_on" value="{{ today }}">
+      </label>
+      <label class="full">Title
+        <input type="text" name="title" placeholder="Captain's pick, fair play award, standout duel">
+      </label>
+      <label class="full">Notes
+        <textarea name="notes" rows="4" placeholder="Optional context about why the award was given."></textarea>
+      </label>
+      <div class="hero-actions">
+        <button type="submit">Record Award</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="section-head compact-section-head">
+      <div>
+        <h2>Recent Awards</h2>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Fighter</th>
+            <th>Type</th>
+            <th>Units</th>
+            <th>Title</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for honour in honours %}
+          <tr>
+            <td>{{ honour.awarded_on }}</td>
+            <td>{{ honour.fighter_name }}</td>
+            <td>{{ honour.honour_type.replace('_', ' ')|title }}</td>
+            <td>{{ honour.units }}</td>
+            <td>{{ honour.title or '—' }}</td>
+            <td>{{ honour.notes or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="table-empty-cell">No ad hoc awards recorded yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endif %}
+{% endblock %}

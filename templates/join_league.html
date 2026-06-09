@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel narrow">
+  <h1>Join a League</h1>
+  <p class="meta">Enter a league join code from a league admin to add that league to your account and switch into it.</p>
+  <form method="post" class="form-grid">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <label>League Join Code <input name="code" required autocomplete="off" style="text-transform: uppercase;"></label>
+    <button type="submit">Join League</button>
+  </form>
+</section>
+{% endblock %}

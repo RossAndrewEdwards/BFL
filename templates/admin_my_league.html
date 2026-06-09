@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero compact-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">My League Workspace</span>
+      <h1>{{ league.name }}</h1>
+    </div>
+    <div class="summary-band">
+      <div class="mini-stat"><span>Status</span><strong>{{ league.status|title }}</strong></div>
+      <div class="mini-stat"><span>Join code</span><strong>{{ league.join_code }}</strong></div>
+      <div class="mini-stat"><span>Your role</span><strong>{{ 'League Admin + Player' if membership.manager_limit|int > 0 else 'League Admin Only' }}</strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-grid" style="margin-top: 20px;">
+  <div><span>Fighters</span><strong>{{ workspace.fighter_count }}</strong></div>
+  <div><span>Events</span><strong>{{ workspace.event_count }}</strong></div>
+  <div><span>Players</span><strong>{{ workspace.player_count }}</strong></div>
+  <div><span>Teams</span><strong>{{ workspace.team_count }}</strong></div>
+</section>
+
+<div class="league-workspace" style="margin-top: 20px;">
+  <div class="league-main-stack">
+    <section class="panel league-section-panel">
+      <div class="section-head compact-section-head">
+        <div>
+          <h2>League Dashboard</h2>
+        </div>
+      </div>
+      <div class="card-grid league-workspace-card-grid">
+        <article class="card league-workspace-card">
+          <span class="eyebrow-chip">Fighters</span>
+          <h3>Maintain the fighter pool</h3>
+          <p>Manage the fighters available in this league only, including imports, attendance, and baseline updates.</p>
+          <div class="pill-row">
+            <span class="pill brand">{{ workspace.fighter_count }} fighters</span>
+          </div>
+          <div class="hero-actions">
+            <a class="button" href="{{ url_for('admin_fighters') }}">Open Fighters</a>
+            <a class="button secondary" href="{{ url_for('admin_training_workspace') }}">Training</a>
+          </div>
+        </article>
+        <article class="card league-workspace-card">
+          <span class="eyebrow-chip">Events</span>
+          <h3>Update results and league activity</h3>
+          <p>Record event results for this league and keep scoring current without needing platform-admin help.</p>
+          <div class="pill-row">
+            <span class="pill brand">{{ workspace.event_count }} scored events</span>
+            {% if workspace.latest_event %}<span class="pill">{{ workspace.latest_event['event_date'] }}</span>{% endif %}
+          </div>
+          <div class="hero-actions">
+            <a class="button" href="{{ url_for('admin_events') }}">Open Events</a>
+          </div>
+        </article>
+        <article class="card league-workspace-card">
+          <span class="eyebrow-chip">Players</span>
+          <h3>Manage player access</h3>
+          <p>Review players in this league, keep claim flows moving, and manage one-team-per-player ownership within quota.</p>
+          <div class="pill-row">
+            <span class="pill brand">{{ quota.players_used }} / {{ quota.max_players if quota.max_players is not none else 'Unlimited' }} players</span>
+            <span class="pill">{{ quota.players_remaining if quota.players_remaining is not none else 'No cap' }} remaining</span>
+          </div>
+          <div class="hero-actions">
+            <a class="button" href="{{ url_for('admin_players') }}">Open Players</a>
+          </div>
+        </article>
+        <article class="card league-workspace-card">
+          <span class="eyebrow-chip">Teams</span>
+          <h3>Review and support team builders</h3>
+          <p>Manage league teams, check roster health, and help members when quota or validation issues come up.</p>
+          <div class="pill-row">
+            <span class="pill brand">{{ quota.teams_used }} / {{ quota.max_teams if quota.max_teams is not none else 'Unlimited' }} teams</span>
+            <span class="pill">{{ quota.teams_remaining if quota.teams_remaining is not none else 'No cap' }} remaining</span>
+          </div>
+          <div class="hero-actions">
+            <a class="button" href="{{ url_for('admin_teams') }}">Open Teams</a>
+            {% if membership.manager_limit|int > 0 %}
+            <a class="button secondary" href="{{ url_for('my_team') }}">My Teams</a>
+            {% endif %}
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel league-section-panel">
+      <div class="section-head compact-section-head">
+        <div>
+          <h2>Branding and Access</h2>
+        </div>
+      </div>
+      <form method="post" class="form-grid league-settings-panel">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" value="save_branding">
+
+        <label>League
+          <input type="text" value="{{ league.name }}" disabled>
+        </label>
+
+        <label>Status
+          <input type="text" value="{{ league.status|title }}" disabled>
+        </label>
+
+        <label style="grid-column: 1 / -1;">League Logo URL
+          <input type="url" name="logo_url" value="{{ league.logo_url or '' }}" placeholder="https://example.com/league-logo.png">
+        </label>
+
+        {% if league.logo_url %}
+        <div class="league-logo-preview-card" style="grid-column: 1 / -1;">
+          <p class="meta">Current header logo preview</p>
+          <img src="{{ league.logo_url }}" alt="{{ league.name }} logo" class="league-logo-preview">
+        </div>
+        {% endif %}
+
+        <div class="hero-actions" style="grid-column: 1 / -1;">
+          <button type="submit">Save Branding</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <aside class="panel league-side-panel">
+    <div>
+      <h2>Quota Snapshot</h2>
+      <div class="detail-list league-detail-list">
+        <div class="detail-row"><span>Player usage</span><strong>{{ quota.players_used }} / {{ quota.max_players if quota.max_players is not none else 'Unlimited' }}</strong></div>
+        <div class="detail-row"><span>Player capacity left</span><strong>{{ quota.players_remaining if quota.players_remaining is not none else 'No cap' }}</strong></div>
+        <div class="detail-row"><span>Team usage</span><strong>{{ quota.teams_used }} / {{ quota.max_teams if quota.max_teams is not none else 'Unlimited' }}</strong></div>
+        <div class="detail-row"><span>Team capacity left</span><strong>{{ quota.teams_remaining if quota.teams_remaining is not none else 'No cap' }}</strong></div>
+      </div>
+    </div>
+
+    <div>
+      <h2>League Access</h2>
+      <div class="detail-list league-detail-list">
+        <div class="detail-row"><span>Join code</span><strong>{{ league.join_code }}</strong></div>
+        <div class="detail-row"><span>Your player access</span><strong>{{ 'Enabled' if membership.manager_limit|int > 0 else 'Not enabled' }}</strong></div>
+        <div class="detail-row"><span>Header brand</span><strong>{{ 'Custom logo' if league.logo_url else 'Platform default' }}</strong></div>
+      </div>
+      <form method="post" class="form-grid" style="margin-top: 16px;">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" value="regenerate_join_code">
+        <button type="submit" class="secondary">Regenerate Join Code</button>
+      </form>
+      {% if membership.manager_limit|int < 1 %}
+      <form method="post" class="form-grid" style="margin-top: 12px;">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" value="enable_self_participation">
+        <button type="submit">Join This League as a Player</button>
+      </form>
+      {% endif %}
+      <p class="meta" style="margin-top: 14px;">Share the join code with players so they can add this league to their account.</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}

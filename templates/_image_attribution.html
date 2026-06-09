@@ -1,0 +1,18 @@
+{% macro image_attribution(credit, source_url, default_credit='', default_source_url='') -%}
+  {% set raw_credit = credit or default_credit %}
+  {% set raw_source = source_url or default_source_url %}
+  {% set display_credit = '' if raw_credit in [None, '', 'None'] else raw_credit %}
+  {% set display_source = '' if raw_source in [None, '', 'None'] else raw_source %}
+  {% if display_credit or display_source %}
+    <p class="image-attribution">
+      Image:
+      {% if display_credit %}
+        <span>{{ display_credit }}</span>
+      {% endif %}
+      {% if display_source %}
+        {% if display_credit %}<span>&middot;</span>{% endif %}
+        <a href="{{ display_source }}" target="_blank" rel="noopener">Source</a>
+      {% endif %}
+    </p>
+  {% endif %}
+{%- endmacro %}

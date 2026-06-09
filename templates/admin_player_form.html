@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ 'Add Player' if is_new else 'Edit Player' }}</h1>
+<form method="post" class="form-grid two-col">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+<label>Display Name <input name="display_name" value="{{ player.display_name if player else '' }}" required></label>
+<label>Username <input name="username" value="{{ player.username if player else '' }}" required></label>
+<label>Password {% if not is_new %}<span class="hint">Leave blank to keep current password</span>{% endif %}
+<input name="password" type="password" {{ 'required' if is_new else '' }}>
+</label>
+{% if invite %}
+<div class="full panel">
+<h2>Claim Invite</h2>
+<p class="meta">Code {{ invite.code }} - Expires {{ invite.expires_at[:16].replace('T', ' ') }}</p>
+<p class="meta">{{ url_for('claim_account', token=invite.token, _external=True) }}</p>
+</div>
+{% endif %}
+{% if not is_new %}
+<div class="full panel">
+<h2>Linked Team</h2>
+<p class="meta">Players can have one team per league.</p>
+{% if managed_teams %}
+<div class="detail-list" style="margin-top: 14px;">
+{% for team in managed_teams %}
+<div class="detail-row">
+<span>{{ team.team_name }}</span>
+<strong>Manager {{ team.manager }}</strong>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<p class="meta">No team is linked to this player yet. Assign the player from the team editor.</p>
+{% endif %}
+</div>
+{% endif %}
+<button type="submit">{{ 'Create Player' if is_new else 'Save Player' }}</button>
+</form>
+{% endblock %}

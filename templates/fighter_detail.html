@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% from "_card_templates.html" import render_fighter_card %}
+{% block content %}
+<section class="hero compact-hero fighter-profile-hero">
+  <div class="hero-grid fighter-profile-hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Fighter Profile</span>
+      <h1>{{ fighter.name }}</h1>
+      {% if fighter.hero_quote %}<p class="meta">{{ fighter.hero_quote }}</p>{% endif %}
+      <div class="pill-row">
+        {% if fighter.role_or_weapon or fighter.preferred_role %}<span class="pill brand">{{ fighter.role_or_weapon or fighter.preferred_role }}</span>{% endif %}
+        <span class="pill">Rank #{{ fighter.rank }}</span>
+        <span class="pill">Current cost {{ fighter.current_cost }}</span>
+        <span class="pill">Next cost {{ fighter.next_cost }}</span>
+      </div>
+      <div class="hero-actions" style="margin-top: 16px;">
+        <a class="button secondary" href="{{ browse_back_url }}">Back to Fighter Browse</a>
+        <a class="button secondary" href="{{ url_for('request_fighter_edit', fighter_id=fighter.id) }}">Request an Update</a>
+      </div>
+    </div>
+    <div class="summary-band">
+      <div class="mini-stat"><span>Overall points</span><strong>{{ fighter.total_points }}</strong></div>
+      <div class="mini-stat"><span>Overall rating</span><strong>{{ fighter.overall_rating|round|int }}</strong></div>
+      <div class="mini-stat"><span>League rank</span><strong>#{{ fighter.rank }}</strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="fighter-profile-layout" style="margin-top: 24px;">
+  <div class="fighter-profile-card-column">
+    {{ render_fighter_card(
+      fighter,
+      fighter_public_display,
+      url_for('fighter_detail', fighter_id=fighter.id),
+      default_skins,
+      eyebrow_text='League Collectible',
+      summary_text=fighter.known_for or fighter_public_display.summary,
+      card_class='fighter-profile-collector-card',
+      submeta_text=fighter.nickname or fighter.role_or_weapon or fighter.preferred_role or fighter.fighting_style
+    ) }}
+  </div>
+
+  <div class="fighter-profile-main">
+    <section class="detail-card dark">
+      <h2>Current Fantasy Read</h2>
+      <div class="stats-grid">
+        <div><span>Overall points</span><strong>{{ fighter.total_points }}</strong></div>
+        <div><span>Current cost</span><strong>{{ fighter.current_cost }}</strong></div>
+        <div><span>Next cost</span><strong>{{ fighter.next_cost }}</strong></div>
+        <div><span>League rank</span><strong>#{{ fighter.rank }}</strong></div>
+      </div>
+      <div class="split-stats fighter-public-stats" style="margin-top: 18px;">
+        <div class="mini-stat"><span>Glory</span><strong>{{ fighter.glory }}</strong></div>
+        <div class="mini-stat"><span>Discipline</span><strong>{{ fighter.discipline_rating }}</strong></div>
+        <div class="mini-stat"><span>Lethality</span><strong>{{ fighter.lethality }}</strong></div>
+        <div class="mini-stat"><span>Resilience</span><strong>{{ fighter.resilience }}</strong></div>
+        <div class="mini-stat"><span>Crowd Favourite</span><strong>{{ fighter.crowd_favourite }}</strong></div>
+        <div class="mini-stat"><span>Synergy</span><strong>{{ fighter.synergy }}</strong></div>
+      </div>
+    </section>
+
+    <section class="detail-card">
+      <h2>Fighter Identity</h2>
+      <div class="detail-list">
+        <div class="detail-row"><span>Nickname</span><strong>{{ fighter.nickname or 'Not set' }}</strong></div>
+        <div class="detail-row"><span>Age</span><strong>{{ fighter.age or 'Unknown' }}</strong></div>
+        <div class="detail-row"><span>Fighting style</span><strong>{{ fighter.fighting_style or 'Not set' }}</strong></div>
+        <div class="detail-row"><span>Role or weapon</span><strong>{{ fighter.role_or_weapon or fighter.preferred_role or 'Not set' }}</strong></div>
+        <div class="detail-row"><span>Height</span><strong>{{ fighter.height or 'Unknown' }}</strong></div>
+        <div class="detail-row"><span>Weight</span><strong>{{ fighter.weight or 'Unknown' }}</strong></div>
+        <div class="detail-row"><span>Known for</span><strong>{{ fighter.known_for or fighter.reputation or 'Not set' }}</strong></div>
+        <div class="detail-row"><span>Joined year</span><strong>{{ fighter.joined_year or fighter.start_year or 'Unknown' }}</strong></div>
+      </div>
+      {% if fighter.bio %}
+      <p class="subtle" style="margin-top: 18px;"><strong>Description.</strong> {{ fighter.bio }}</p>
+      {% endif %}
+      {% if fighter.why_buhurt %}
+      <p class="subtle" style="margin-top: 12px;"><strong>Why Buhurt.</strong> {{ fighter.why_buhurt }}</p>
+      {% elif fighter.notes %}
+      <p class="subtle" style="margin-top: 12px;"><strong>Notes.</strong> {{ fighter.notes }}</p>
+      {% endif %}
+    </section>
+  </div>
+</section>
+
+<div class="section-head">
+  <div>
+    <h2>Lifetime Fighter History</h2>
+    <p>Historic medal output and performance are shown separately from the live fantasy ranking above.</p>
+  </div>
+</div>
+
+<section class="feature-grid">
+  <article class="feature-card">
+    <h3>Lifetime Podium</h3>
+    <div class="pill-row">
+      <span class="pill">Gold {{ fighter.gold_medals }}</span>
+      <span class="pill">Silver {{ fighter.silver_medals }}</span>
+      <span class="pill">Bronze {{ fighter.bronze_medals }}</span>
+      <span class="pill">Special {{ fighter.special_awards }}</span>
+    </div>
+  </article>
+  <article class="feature-card">
+    <h3>Lifetime Performance</h3>
+    <div class="pill-row">
+      <span class="pill">Competitions {{ fighter.competitions }}</span>
+      <span class="pill">Rounds {{ fighter.rounds_fought }}</span>
+      <span class="pill">Kills {{ fighter.kills }}</span>
+      <span class="pill">Assists {{ fighter.assists }}</span>
+    </div>
+  </article>
+  <article class="feature-card">
+    <h3>Discipline Record</h3>
+    <div class="pill-row">
+      <span class="pill">Training {{ fighter.training }}</span>
+      <span class="pill">Support {{ fighter.support }}</span>
+      <span class="pill">Yellow {{ fighter.yellow_cards }}</span>
+      <span class="pill">Red {{ fighter.red_cards }}</span>
+    </div>
+  </article>
+</section>
+
+<div class="section-head">
+  <div>
+    <h2>Ad Hoc Honours</h2>
+  </div>
+</div>
+
+{% if honours %}
+<section class="event-grid-cards">
+  {% for honour in honours %}
+  <article class="event-card">
+    <div class="ranking-meta-line">
+      <span class="pill brand">{{ honour.awarded_on }}</span>
+      <span>{{ honour.honour_type.replace('_', ' ')|title }}</span>
+    </div>
+    <div class="pill-row">
+      <span class="pill">Units {{ honour.units }}</span>
+      {% if honour.title %}<span class="pill">{{ honour.title }}</span>{% endif %}
+    </div>
+    {% if honour.notes %}
+    <p class="subtle" style="margin-top: 12px;">{{ honour.notes }}</p>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<section class="panel">
+  <h3>No ad hoc honours yet</h3>
+  <p class="meta">This fighter has not had any medals or special awards recorded outside event scoring.</p>
+</section>
+{% endif %}
+
+<div class="section-head">
+  <div>
+    <h2>Event-by-Event History</h2>
+    <p>Scored events appear here as historical results rather than as the live fantasy ranking.</p>
+  </div>
+</div>
+
+{% if events %}
+<section class="event-grid-cards">
+  {% for e in events %}
+  <article class="event-card">
+    <div class="ranking-meta-line">
+      <span class="pill brand">{{ e.event_date }}</span>
+      <span>{{ e.event_name }}</span>
+    </div>
+    <div class="split-stats">
+      {% if show_public_fighter_scores %}
+      <div class="mini-stat"><span>Fantasy points</span><strong>{{ e.event_points }}</strong></div>
+      {% else %}
+      <div class="mini-stat"><span>Result</span><strong>Scored</strong></div>
+      {% endif %}
+      <div class="mini-stat"><span>Kills</span><strong>{{ e.kills }}</strong></div>
+      <div class="mini-stat"><span>Deaths</span><strong>{{ e.deaths }}</strong></div>
+      <div class="mini-stat"><span>Rounds</span><strong>{{ e.rounds_fought }}</strong></div>
+    </div>
+    <div class="pill-row">
+      <span class="pill">Gold {{ e.gold_medals }}</span>
+      <span class="pill">Silver {{ e.silver_medals }}</span>
+      <span class="pill">Bronze {{ e.bronze_medals }}</span>
+      <span class="pill">Yellow {{ e.yellow_cards }}</span>
+      <span class="pill">Red {{ e.red_cards }}</span>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<section class="panel">
+  <h3>No event history yet</h3>
+  <p class="meta">This fighter has not been given any scored event results.</p>
+</section>
+{% endif %}
+{% endblock %}

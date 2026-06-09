@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    (() => {
+      const storedTheme = window.localStorage.getItem("bfl-theme");
+      const resolvedTheme = storedTheme === "dark" || storedTheme === "light"
+        ? storedTheme
+        : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.dataset.theme = resolvedTheme;
+    })();
+  </script>
+  <title>
+    {% if current_user and is_platform_admin %}
+    Platform Admin | Buhurt Fantasy League
+    {% elif current_user and current_league %}
+    {{ current_league.name }} | Buhurt Fantasy League
+    {% else %}
+    Buhurt Fantasy League
+    {% endif %}
+  </title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body
+  class="app-shell{% if current_user %} app-shell-authenticated{% else %} app-shell-public{% endif %}"
+  data-shell-user="{{ session.get('username', 'guest') }}"
+  data-shell-scope="{% if is_platform_admin %}platform{% elif current_league %}league-{{ current_league.id }}{% else %}public{% endif %}"
+  data-page-key="{{ request.path }}"
+  data-page-endpoint="{{ request.endpoint or '' }}"
+>
+<header class="site-header">
+  <div class="header-shell">
+    <div class="brand-block">
+      {% set header_logo = current_league.logo_url if current_user and current_league and current_league.logo_url and not is_platform_admin else 'https://static.wixstatic.com/media/ba1797_7ea4d9a1fb3c480ab197b81ad5fd4630~mv2.png/v1/fill/w_214,h_280,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/ba1797_7ea4d9a1fb3c480ab197b81ad5fd4630~mv2.png' %}
+      <a class="brand-logo-link" href="{{ url_for('index') }}" aria-label="Buhurt Fantasy League home">
+        <img class="brand-logo" src="{{ header_logo }}" alt="{{ current_league.name if current_user and current_league and not is_platform_admin else 'Buhurt Fantasy League' }} logo">
+        <span class="brand-copy">
+          <span class="eyebrow">Fantasy League Tracker</span>
+          <span class="brand">Buhurt Fantasy League</span>
+          {% if current_user %}
+          <span class="eyebrow">
+            {% if is_platform_admin %}
+            Platform Admin
+            {% elif current_league %}
+            League: {{ current_league.name }}
+            {% endif %}
+          </span>
+          {% endif %}
+        </span>
+      </a>
+    </div>
+    <nav>
+      <a href="{{ url_for('index') }}">Home</a>
+      {% if current_user %}
+      {% if not is_platform_admin and current_role != 'league_admin' %}<a href="{{ url_for('player_dashboard') }}">Dashboard</a>{% endif %}
+      <a href="{{ url_for('leaderboard') }}">Leaderboard</a>
+      {% if not is_platform_admin %}
+      <a href="{{ url_for('join_league') }}">Join League</a>
+      {% endif %}
+      {% if available_memberships|length > 1 %}
+      <form method="post" action="{{ url_for('switch_league') }}" class="inline-form league-switcher">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+        <label class="sr-only" for="league-switcher">Switch league</label>
+        <select id="league-switcher" name="league_id" onchange="this.form.submit()">
+          {% for membership in available_memberships %}
+          <option value="{{ membership.league_id }}" {% if current_league and current_league.id == membership.league_id %}selected{% endif %}>
+            {{ membership.league_name }}{% if membership.role == 'league_admin' %} (Admin){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </form>
+      {% endif %}
+      <span class="eyebrow">
+        {% if is_platform_admin %}
+        Platform Admin
+        {% elif current_league %}
+        {{ current_league.name }}
+        {% endif %}
+      </span>
+      {% endif %}
+      {% if current_user and current_role == 'league_admin' %}<a href="{{ url_for('admin_my_league') }}">My League</a>{% endif %}
+      {% if current_user and can_manage_teams %}<a href="{{ url_for('my_team') }}">My Teams</a>{% endif %}
+      {% if current_user and not is_platform_admin %}<a href="{{ url_for('my_notifications') }}">My Notifications</a>{% endif %}
+      {% if current_user and is_platform_admin %}
+      <a href="{{ url_for('admin_dashboard') }}">Admin</a>
+      {% endif %}
+      <button type="button" class="link-button nav-button nav-button-theme" data-theme-toggle aria-pressed="false">Theme</button>
+      {% if current_user %}
+      <form method="post" action="{{ url_for('logout') }}" class="inline-form">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="link-button nav-button nav-button-logout">Logout</button>
+      </form>
+      {% else %}<a href="{{ url_for('login') }}">Login</a>{% endif %}
+    </nav>
+  </div>
+</header>
+<main class="container">
+  <div class="page-frame page-transition-surface" data-page-frame>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}<div class="flash">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>{% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</main>
+<footer class="site-footer">
+  <div class="footer-shell">
+    <div class="footer-brand">
+      <strong>Buhurt Fantasy League</strong>
+      <p>A shared fantasy platform for club leagues, league admins, and players.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-column">
+        <span class="footer-heading">Explore</span>
+        <a href="{{ url_for('index') }}">Home</a>
+        {% if current_user and not is_platform_admin and current_role != 'league_admin' %}
+        <a href="{{ url_for('player_dashboard') }}">Dashboard</a>
+        {% endif %}
+        <a href="{{ url_for('public_rules') }}">Rules</a>
+        <a href="{{ url_for('contact') }}">Contact Us</a>
+        {% if current_user %}
+        <a href="{{ url_for('hall_of_fame') }}">Hall of Fame</a>
+        {% endif %}
+      </div>
+      <div class="footer-column">
+        <span class="footer-heading">Account</span>
+        {% if current_user and current_role == 'league_admin' %}
+        <a href="{{ url_for('admin_my_league') }}">My League</a>
+        {% endif %}
+        {% if current_user and can_manage_teams %}
+        <a href="{{ url_for('my_team') }}">My Teams</a>
+        {% endif %}
+        {% if current_user and not is_platform_admin %}
+        <a href="{{ url_for('my_notifications') }}">My Notifications</a>
+        {% endif %}
+        {% if current_user and is_platform_admin %}
+        <a href="{{ url_for('admin_dashboard') }}">Platform Admin</a>
+        {% endif %}
+        <button type="button" class="link-button footer-link-button footer-link-button-theme" data-theme-toggle aria-pressed="false">Toggle Theme</button>
+        {% if current_user %}
+        <form method="post" action="{{ url_for('logout') }}" class="inline-form footer-inline-form">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="link-button footer-link-button footer-link-button-logout">Logout</button>
+        </form>
+        {% else %}
+        <a href="{{ url_for('login') }}">Login</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</footer>
+{% block scripts %}{% endblock %}
+<script>
+(() => {
+  const body = document.body;
+  const pageFrame = document.querySelector("[data-page-frame]");
+  const shellUser = body?.dataset.shellUser || "guest";
+  const shellScope = body?.dataset.shellScope || "public";
+  const pageKey = `${window.location.pathname}${window.location.search}`;
+  const scrollStorageKey = `bfl-shell-scroll:${shellUser}:${shellScope}:${pageKey}`;
+  const detailsStorageKey = `bfl-shell-details:${shellUser}:${shellScope}:${pageKey}`;
+
+  if ("scrollRestoration" in window.history) {
+    window.history.scrollRestoration = "manual";
+  }
+
+  const restorePageContext = () => {
+    if (window.location.hash) {
+      return;
+    }
+    const savedScroll = window.sessionStorage.getItem(scrollStorageKey);
+    if (savedScroll !== null) {
+      const scrollY = Number(savedScroll);
+      if (!Number.isNaN(scrollY)) {
+        window.scrollTo({ top: scrollY, behavior: "auto" });
+      }
+    }
+  };
+
+  const persistScroll = () => {
+    window.sessionStorage.setItem(scrollStorageKey, String(window.scrollY));
+  };
+
+  const detailsElements = Array.from(document.querySelectorAll("details"));
+  if (detailsElements.length) {
+    let savedDetailsState = {};
+    try {
+      savedDetailsState = JSON.parse(window.sessionStorage.getItem(detailsStorageKey) || "{}");
+    } catch (error) {
+      savedDetailsState = {};
+    }
+
+    const persistDetails = () => {
+      const state = {};
+      detailsElements.forEach((details, index) => {
+        const detailKey = details.dataset.persistKey || details.id || `details-${index}`;
+        state[detailKey] = details.open;
+      });
+      window.sessionStorage.setItem(detailsStorageKey, JSON.stringify(state));
+    };
+
+    detailsElements.forEach((details, index) => {
+      const detailKey = details.dataset.persistKey || details.id || `details-${index}`;
+      if (Object.prototype.hasOwnProperty.call(savedDetailsState, detailKey)) {
+        details.open = Boolean(savedDetailsState[detailKey]);
+      }
+      details.addEventListener("toggle", persistDetails);
+    });
+  }
+
+  restorePageContext();
+  window.addEventListener("scroll", persistScroll, { passive: true });
+  window.addEventListener("pagehide", persistScroll);
+
+  if (pageFrame && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    requestAnimationFrame(() => {
+      pageFrame.classList.add("is-ready");
+    });
+  } else if (pageFrame) {
+    pageFrame.classList.add("is-ready");
+  }
+
+  const root = document.documentElement;
+  const buttons = document.querySelectorAll("[data-theme-toggle]");
+  if (!buttons.length) return;
+
+  const labels = {
+    light: "Light Mode",
+    dark: "Dark Mode",
+  };
+
+  const applyTheme = (theme) => {
+    root.dataset.theme = theme;
+    window.localStorage.setItem("bfl-theme", theme);
+    buttons.forEach((button) => {
+      button.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+      button.textContent = labels[theme] || "Theme";
+    });
+  };
+
+  const currentTheme = root.dataset.theme === "dark" ? "dark" : "light";
+  applyTheme(currentTheme);
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      applyTheme(root.dataset.theme === "dark" ? "light" : "dark");
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_card_templates.html" import render_fighter_card %}
+{% from "_image_attribution.html" import image_attribution %}
+{% from "_tier_helpers.html" import render_tier_badge, render_tier_legend %}
+{% block content %}
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Shared Team Page</span>
+      <h1>{{ team.team_name }}</h1>
+      <div class="pill-row">
+        <span class="pill">{{ team.status }}</span>
+        <span class="pill">Player {{ team.player_name or 'Unassigned' }}</span>
+        <span class="pill">Manager {{ team.manager }}</span>
+        <span class="pill">Points {{ team.points }}</span>
+      </div>
+    </div>
+    <div class="hero-meta">
+      <img class="team-hero-image" src="{{ url_for('static', filename=team.image_path) if team.image_path else default_skins.team.url }}" alt="{{ team.team_name }} team image">
+      {{ image_attribution(team.image_credit, team.image_source_url, default_skins.team.credit if not team.image_path else '', default_skins.team.source if not team.image_path else '') }}
+      <div class="summary-band">
+        <div class="mini-stat"><span>Glory</span><strong>{{ team.trait_totals[0].value }}</strong></div>
+        <div class="mini-stat"><span>Discipline</span><strong>{{ team.trait_totals[1].value }}</strong></div>
+        <div class="mini-stat"><span>Synergy</span><strong>{{ team.trait_totals[5].value }}</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+{{ render_tier_legend() }}
+<section class="roster-grid fighter-card-track-grid" style="margin-top: 20px;">
+  {% for f in team.fighters %}
+  {% set lf = leaderboard[f.id] %}
+  {{ render_fighter_card(
+    lf,
+    public_fighter_display(lf, 'leaderboard'),
+    url_for('fighter_detail', fighter_id=f.id),
+    default_skins,
+    ('Points ' ~ lf.total_points) if show_public_fighter_scores else ('Rank #' ~ lf.rank),
+    none,
+    '',
+    'Cost ' ~ lf.cost_used
+  ) }}
+  {% endfor %}
+</section>
+{% endblock %}

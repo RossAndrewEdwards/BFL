@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero panel">
+  <span class="eyebrow-chip">Choose Your League</span>
+  <h1>Select a league to continue</h1>
+  <p class="hero-copy">Your account belongs to more than one league. Pick the one you want to work in right now, and you can switch again later from the header.</p>
+</section>
+
+<section class="card-grid" style="margin-top: 20px;">
+  {% for membership in memberships %}
+  <article class="card">
+    <div class="league-overview-topline">
+      <div>
+        <span class="eyebrow-chip">{{ 'League Admin' if membership.role == 'league_admin' else 'Player' }}</span>
+        <h2 style="margin-top: 10px;">{{ membership.league_name }}</h2>
+      </div>
+      <form method="post" class="inline-form">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="league_id" value="{{ membership.league_id }}">
+        <button class="button" type="submit">Continue</button>
+      </form>
+    </div>
+    <div class="pill-row" style="margin-top: 14px;">
+      <span class="pill brand">Role {{ 'Admin' if membership.role == 'league_admin' else 'Player' }}</span>
+      <span class="pill brand">Status {{ membership.league_status|title }}</span>
+      {% if membership.manager_limit %}
+      <span class="pill brand">Player Access Enabled</span>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

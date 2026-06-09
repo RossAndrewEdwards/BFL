@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel narrow">
+  <h1>Claim {{ claim.username }}</h1>
+  <p class="meta">Complete this once to activate your league account.</p>
+  {% if claim.league_name %}
+  <p class="meta">League: <strong>{{ claim.league_name }}</strong>{% if claim.league_club_name %} for {{ claim.league_club_name }}{% endif %}.</p>
+  {% endif %}
+  <form method="post" class="form-grid">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <label>Display Name <input name="display_name" value="{{ claim.display_name }}" required></label>
+    <label>Create Password <input name="password" type="password" required></label>
+    <button type="submit">Claim Account</button>
+  </form>
+</section>
+{% endblock %}

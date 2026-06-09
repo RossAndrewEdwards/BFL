@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Admin Dashboard</h1>
+
+<section class="panel" style="margin-top: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h2>Platform Shortcuts</h2>
+    </div>
+  </div>
+  <div class="hero-actions">
+    <a class="button" href="{{ url_for('admin_leagues') }}">Leagues</a>
+    <a class="button secondary" href="{{ url_for('admin_season_settings') }}">Season Settings</a>
+    <a class="button secondary" href="{{ url_for('admin_rules') }}">Rules & Settings</a>
+    <a class="button secondary" href="{{ url_for('admin_players') }}">Players</a>
+    <a class="button secondary" href="{{ url_for('admin_audit') }}">Audit & Rollback</a>
+  </div>
+</section>
+
+<section class="panel table-toolbar">
+  <form class="table-toolbar-form" method="get">
+    <div class="table-toolbar-grid">
+      <label class="toolbar-field">
+        <span>Season</span>
+        <select name="season">
+          {% for season_option in seasons %}
+          <option value="{{ season_option.id }}" {% if selected_season_id == season_option.id %}selected{% endif %}>{{ season_option.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="toolbar-field">
+        <span>League Status</span>
+        <select name="status">
+          <option value="all" {% if filters.status == 'all' %}selected{% endif %}>All leagues</option>
+          <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Active only</option>
+          <option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>Pending only</option>
+          <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Inactive only</option>
+          <option value="archived" {% if filters.status == 'archived' %}selected{% endif %}>Archived only</option>
+        </select>
+      </label>
+      <label class="toolbar-field">
+        <span>Reporting Window</span>
+        <select name="window">
+          <option value="7" {% if filters.window_days == 7 %}selected{% endif %}>Last 7 days</option>
+          <option value="30" {% if filters.window_days == 30 %}selected{% endif %}>Last 30 days</option>
+          <option value="90" {% if filters.window_days == 90 %}selected{% endif %}>Last 90 days</option>
+        </select>
+      </label>
+    </div>
+    <div class="table-toolbar-actions">
+      <div class="hero-actions">
+        <a class="button secondary" href="{{ url_for('admin_dashboard') }}">Reset</a>
+        <button class="button" type="submit">Apply Filters</button>
+      </div>
+    </div>
+  </form>
+</section>
+
+<section class="stats-grid">
+  <div><span>Leagues</span><strong>{{ stats.leagues }}</strong></div>
+  <div><span>Fighters</span><strong>{{ stats.fighters }}</strong></div>
+  <div><span>Teams</span><strong>{{ stats.teams }}</strong></div>
+  <div><span>Players</span><strong>{{ stats.players }}</strong></div>
+  <div><span>Events</span><strong>{{ stats.events }}</strong></div>
+  <div><span>Result Rows</span><strong>{{ stats.results }}</strong></div>
+  <div><span>Platform Notices</span><strong>{{ stats.notifications }}</strong></div>
+  <div><span>Audit Entries</span><strong>{{ stats.audit_entries }}</strong></div>
+</section>
+
+<section class="panel" style="margin-top: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h2>League Health</h2>
+    </div>
+    <div class="hero-actions">
+      <a class="button secondary" href="{{ url_for('admin_leagues') }}">Manage Leagues</a>
+    </div>
+  </div>
+  <div class="table-wrap" style="margin-top: 16px;">
+    <table>
+      <thead>
+        <tr>
+          <th>League</th>
+          <th>Status</th>
+          <th>Players</th>
+          <th>Teams</th>
+          <th>Fighters</th>
+          <th>Events</th>
+          <th>Quota Usage</th>
+          <th>Recent Activity</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for league in league_summaries %}
+        <tr>
+          <td>
+            <strong>{{ league.name }}</strong>
+            {% if league.club_name %}<div class="meta">{{ league.club_name }}</div>{% endif %}
+          </td>
+          <td>{{ league.status|title }}</td>
+          <td>{{ league.player_count }}</td>
+          <td>{{ league.team_count }}</td>
+          <td>{{ league.fighter_count }}</td>
+          <td>{{ league.event_count }}</td>
+          <td>
+            <div>Players {{ league.player_quota_usage }}</div>
+            <div class="meta">Teams {{ league.team_quota_usage }}</div>
+          </td>
+          <td>{{ league.recent_activity_at or 'No activity yet' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel" style="margin-top: 20px;">
+  <div class="section-head compact-section-head">
+    <div>
+      <h2>Needs Attention</h2>
+    </div>
+  </div>
+  <section class="stats-grid dashboard-signal-grid" style="margin-top: 0;">
+    <div><span>Pending</span><strong>{{ reporting.pending_count }}</strong></div>
+    <div><span>Inactive</span><strong>{{ reporting.inactive_count }}</strong></div>
+    <div><span>Unassigned</span><strong>{{ reporting.unassigned_count }}</strong></div>
+    <div><span>Near Capacity</span><strong>{{ reporting.near_capacity_count }}</strong></div>
+  </section>
+  {% if reporting.attention_leagues %}
+  <div class="card-grid dashboard-attention-grid" style="margin-top: 18px;">
+    {% for league in reporting.attention_leagues %}
+    <article class="card dashboard-attention-card">
+      <div class="league-overview-topline">
+        <div>
+          <span class="eyebrow-chip">{{ league.status|title }}</span>
+          <h3 style="margin-top: 10px;">{{ league.name }}</h3>
+        </div>
+        <a class="button secondary" href="{{ url_for('admin_league_edit', league_id=league.id) }}">Open League</a>
+      </div>
+      <div class="dashboard-alert-list">
+        {% for reason in league.attention_reasons %}
+        <p>{{ reason }}</p>
+        {% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="meta" style="margin-top: 16px;">All leagues look healthy right now.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% macro render_table_toolbar(toolbar) %}
+<section class="panel table-toolbar">
+  <form method="get" action="{{ toolbar.action }}" class="table-toolbar-form" data-auto-filter="true">
+    {% for key, value in toolbar.persist_params %}
+    <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endfor %}
+    <div class="table-toolbar-grid">
+      <label class="toolbar-field toolbar-search">
+        <span>Search</span>
+        <input type="search" name="{{ toolbar.search_param }}" value="{{ toolbar.search_value }}" placeholder="{{ toolbar.search_placeholder }}">
+      </label>
+      {% for item in toolbar.filters %}
+      <label class="toolbar-field">
+        <span>{{ item.label }}</span>
+        <select name="{{ item.name }}">
+          <option value="">All {{ item.label }}</option>
+          {% for option in item.options %}
+          <option value="{{ option.value }}" {{ 'selected' if item.value == option.value else '' }}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endfor %}
+      {% if toolbar.sort_options %}
+      <label class="toolbar-field">
+        <span>Sort</span>
+        <select name="{{ toolbar.sort_param }}">
+          {% for option in toolbar.sort_options %}
+          <option value="{{ option.value }}" {{ 'selected' if toolbar.sort_value == option.value else '' }}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endif %}
+    </div>
+    <div class="table-toolbar-actions">
+      <p class="meta">Showing {{ toolbar.result_count }} of {{ toolbar.total_count }}</p>
+      <div class="hero-actions">
+        <button type="submit">Apply</button>
+        {% if toolbar.has_active_filters %}
+        <a class="button secondary" href="{{ toolbar.reset_url }}">Clear Filters</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="table-toolbar-status" data-filter-status aria-live="polite"></div>
+    {% if toolbar.search_value or toolbar.has_active_filters %}
+    <div class="table-toolbar-chip-row" aria-label="Active filters">
+      {% if toolbar.search_value %}
+      <span class="toolbar-chip">Search: {{ toolbar.search_value }}</span>
+      {% endif %}
+      {% for item in toolbar.filters if item.value %}
+      <span class="toolbar-chip">{{ item.label }}: {{ item.value }}</span>
+      {% endfor %}
+      {% if toolbar.sort_options and toolbar.sort_value and toolbar.sort_value != 'default' %}
+      <span class="toolbar-chip">Sort: {{ toolbar.sort_value|replace('_', ' ')|title }}</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </form>
+</section>
+<script>
+(() => {
+  if (!window.__asyncFilterToolbarBound) {
+    window.__asyncFilterToolbarBound = true;
+    window.__asyncFilterToolbarDebounce = new WeakMap();
+
+    const replaceRegion = async (form, url, pushState) => {
+      const region = form.closest("[data-filter-region]");
+      const status = form.querySelector("[data-filter-status]");
+      if (!region || !region.id) {
+        window.location.assign(url);
+        return;
+      }
+
+      region.setAttribute("aria-busy", "true");
+      form.classList.add("is-filter-loading");
+      if (status) {
+        status.textContent = "Updating results...";
+      }
+
+      try {
+        const response = await fetch(url, {
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          credentials: "same-origin",
+        });
+        if (!response.ok) {
+          window.location.assign(url);
+          return;
+        }
+
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const nextRegion = doc.getElementById(region.id);
+        if (!nextRegion) {
+          window.location.assign(url);
+          return;
+        }
+
+        region.replaceWith(nextRegion);
+        if (pushState) {
+          window.history.pushState({ asyncFilter: true }, "", url);
+        }
+      } finally {
+        region.setAttribute("aria-busy", "false");
+        form.classList.remove("is-filter-loading");
+        if (status) {
+          status.textContent = "";
+        }
+      }
+    };
+
+    document.addEventListener("submit", (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement) || !form.matches("[data-auto-filter='true']")) {
+        return;
+      }
+      event.preventDefault();
+      const baseUrl = form.action || window.location.href;
+      const query = new URLSearchParams(new FormData(form)).toString();
+      const nextUrl = query ? `${baseUrl}?${query}` : baseUrl;
+      replaceRegion(form, nextUrl, true).catch(() => {
+        window.location.assign(nextUrl);
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest(".table-toolbar a.button.secondary");
+      if (!link) {
+        return;
+      }
+      const form = link.closest("[data-filter-region]")?.querySelector("[data-auto-filter='true']");
+      if (!form) {
+        return;
+      }
+      event.preventDefault();
+      replaceRegion(form, link.href, true).catch(() => {
+        window.location.assign(link.href);
+      });
+    });
+
+    window.addEventListener("popstate", () => {
+      window.location.reload();
+    });
+  }
+
+  document.querySelectorAll("[data-auto-filter='true']").forEach((form) => {
+    if (form.dataset.autoFilterBound === "1") {
+      return;
+    }
+    form.dataset.autoFilterBound = "1";
+
+    const submitForm = () => form.requestSubmit();
+
+    form.querySelectorAll("select").forEach((select) => {
+      select.addEventListener("change", submitForm);
+    });
+
+    form.querySelectorAll("input[type='search']").forEach((input) => {
+      input.addEventListener("input", () => {
+        const existing = window.__asyncFilterToolbarDebounce.get(input);
+        if (existing) {
+          window.clearTimeout(existing);
+        }
+        const timeoutId = window.setTimeout(submitForm, 250);
+        window.__asyncFilterToolbarDebounce.set(input, timeoutId);
+      });
+
+      input.addEventListener("search", submitForm);
+    });
+  });
+})();
+</script>
+{% endmacro %}

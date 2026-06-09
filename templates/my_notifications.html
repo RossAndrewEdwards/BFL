@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from "_table_toolbar.html" import render_table_toolbar %}
+{% block content %}
+<div id="my-notifications-page-content" data-filter-region>
+<section class="hero compact-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Private Updates</span>
+      <h1>My Notifications</h1>
+      <p class="meta">Track the status of your fighter edit and new-fighter requests without using admin pages.</p>
+    </div>
+    <div class="summary-band">
+      <div class="mini-stat"><span>Total requests</span><strong>{{ rows|length }}</strong></div>
+      <div class="mini-stat"><span>Pending first</span><strong>Live</strong></div>
+    </div>
+  </div>
+</section>
+
+{{ render_table_toolbar(toolbar) }}
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Request</th>
+        <th>League</th>
+        <th>Status</th>
+        <th>Submitted</th>
+        <th>Reviewed</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>
+          <div class="fighter-admin-name">
+            {% if row.request_type == 'create' %}
+            New fighter: {{ row.request_target }}
+            {% else %}
+            Update request: {{ row.request_target }}
+            {% endif %}
+          </div>
+          <div class="fighter-admin-submeta">
+            <span class="pill">{{ row.request_type|title }}</span>
+            {% if row.payload.role_or_weapon %}<span>{{ row.payload.role_or_weapon }}</span>{% endif %}
+            {% if row.payload.known_for %}<span>{{ row.payload.known_for }}</span>{% endif %}
+          </div>
+          {% if row.review_notes %}
+          <p class="meta" style="margin-top: 8px;"><strong>Review note:</strong> {{ row.review_notes }}</p>
+          {% endif %}
+        </td>
+        <td>{{ row.league_name }}</td>
+        <td>
+          <span class="pill {% if row.status == 'approved' %}success{% elif row.status == 'denied' %}warning{% else %}brand{% endif %}">
+            {{ row.status|title }}
+          </span>
+        </td>
+        <td>{{ row.created_at[:10] if row.created_at else '—' }}</td>
+        <td>
+          {% if row.reviewed_at %}
+          {{ row.reviewed_at[:10] }}
+          {% if row.reviewer_name %}<div class="meta">{{ row.reviewer_name }}</div>{% endif %}
+          {% else %}
+          <span class="meta">Waiting for review</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="table-empty-cell">No request notifications yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>
+{% endblock %}

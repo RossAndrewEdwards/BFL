@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ 'Edit Fighter' if fighter else 'Add Fighter' }}</h1>
+<form method="post" class="form-grid two-col">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+<label>Name <input name="name" value="{{ fighter.name if fighter else '' }}" required></label>
+<label>Tier <select name="tier">{% for tier in ['Tier 1','Tier 2','Tier 3'] %}<option value="{{ tier }}" {{ 'selected' if fighter and fighter.tier == tier else '' }}>{{ tier }}</option>{% endfor %}</select></label>
+<label>Age <input type="number" min="0" name="age" value="{{ fighter.age if fighter and fighter.age is not none else '' }}"></label>
+<label>Joined Year <input type="number" min="0" name="joined_year" value="{{ fighter.joined_year if fighter and fighter.joined_year is not none else '' }}"></label>
+<label>Height <input name="height" value="{{ fighter.height if fighter and fighter.height else '' }}"></label>
+<label>Weight <input name="weight" value="{{ fighter.weight if fighter and fighter.weight else '' }}"></label>
+<label>Current Cost <input type="number" name="current_cost" value="{{ fighter.current_cost if fighter else 50 }}"></label>
+<label>Training <input type="number" name="training" value="{{ baseline.training }}"></label>
+<label>Support <input type="number" name="support" value="{{ baseline.support }}"></label>
+<label>Nickname <input name="nickname" value="{{ fighter.nickname if fighter else '' }}"></label>
+<label>Fighting Style <input name="fighting_style" value="{{ fighter.fighting_style if fighter else '' }}"></label>
+<label>Preferred Role <input name="preferred_role" value="{{ fighter.preferred_role if fighter else '' }}"></label>
+<label>Role or Weapon <input name="role_or_weapon" value="{{ fighter.role_or_weapon if fighter else '' }}"></label>
+<label>Known For <input name="known_for" value="{{ fighter.known_for if fighter else '' }}"></label>
+<label>Reputation <input name="reputation" value="{{ fighter.reputation if fighter else '' }}"></label>
+<label>Image URL <input name="image_url" value="{{ fighter.image_url if fighter else '' }}"></label>
+<label>Image Credit <input name="image_credit" value="{{ fighter.image_credit if fighter else '' }}" placeholder="Artist or photographer"></label>
+<label>Image Source URL <input name="image_source_url" value="{{ fighter.image_source_url if fighter else '' }}" placeholder="https://..."></label>
+<label>Hero Quote <input name="hero_quote" value="{{ fighter.hero_quote if fighter else '' }}"></label>
+<label class="full">Why Buhurt <textarea name="why_buhurt">{{ fighter.why_buhurt if fighter else '' }}</textarea></label>
+<label class="full">Notes <textarea name="notes">{{ fighter.notes if fighter else '' }}</textarea></label>
+<label class="full">Description <textarea name="bio">{{ fighter.bio if fighter else '' }}</textarea></label>
+<button type="submit">Save Fighter</button>
+</form>
+{% endblock %}

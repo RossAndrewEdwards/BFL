@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <div class="section-head compact-section-head">
+    <div>
+      <h1>Season Settings</h1>
+      <p class="meta">Manage season identity, current status, and end-of-season lifecycle actions from one place.</p>
+    </div>
+    <div class="hero-actions">
+      <a class="button secondary" href="{{ url_for('admin_end_season') }}">End Season Workflow</a>
+    </div>
+  </div>
+
+  <form method="post" class="form-grid two-col" style="margin-top: 20px;">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+    <label>Season Name
+      <input type="text" name="season_name" value="{{ season.name }}" required>
+    </label>
+
+    <label>Season Status
+      <select name="season_status">
+        <option value="active" {{ 'selected' if season.status == 'active' else '' }}>Active</option>
+        <option value="completed" {{ 'selected' if season.status == 'completed' else '' }}>Completed</option>
+      </select>
+    </label>
+
+    <div class="full detail-card" style="margin-top: 8px;">
+      <div class="detail-list">
+        <div class="detail-row"><span>Current status</span><strong>{{ 'Open for edits' if season.status == 'active' and not season.locked else 'Completed and locked' }}</strong></div>
+        <div class="detail-row"><span>Started</span><strong>{{ season.started_at[:16].replace('T', ' ') if season.started_at else 'Unknown' }}</strong></div>
+        <div class="detail-row"><span>Completed</span><strong>{{ season.completed_at[:16].replace('T', ' ') if season.completed_at else 'Not completed' }}</strong></div>
+      </div>
+      <p class="meta" style="margin-top: 16px;">Scoring values, roster rules, fighter-cost formula settings, and public score visibility now live in <a href="{{ url_for('admin_rules') }}">Rules and Settings</a>. Selecting completed will send you to the confirmation workflow so the final leaderboard and snapshots are stored safely. Re-selecting active on a completed season reopens it here.</p>
+    </div>
+
+    <button type="submit">Save Season Settings</button>
+  </form>
+</section>
+{% endblock %}

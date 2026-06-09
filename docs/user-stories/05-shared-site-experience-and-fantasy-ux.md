@@ -219,6 +219,8 @@ Acceptance criteria:
 - When the shared fighter card template is updated, all fighter-card displays update with it.
 - The fighter card style should feel like a trading card rather than a collection of unrelated layouts.
 - The visual design should feel recognisably close to real-world collectible sports cards such as baseball or match-attax style cards.
+- Fighter cards use one consistent baseline card size and aspect ratio across the site rather than being stretched or resized differently on different pages.
+- The baseline fighter card size should feel close to a real trading card, with surrounding layouts adapting to the card rather than shrinking the card to fit awkward page space.
 - Fighter cards use stronger card-like framing such as a featured portrait area, headline name treatment, rank or rarity badge treatment, and a clear stat panel layout.
 - Fighter cards can use rich descriptor fields such as nickname, fighting style, role or weapon, known for, and joined year when those details help the card feel personal and collectible.
 - Fighter cards show a fallback image when a dedicated fighter image is missing.
@@ -235,6 +237,7 @@ Acceptance criteria:
 - The design should feel intentionally framed and decorative rather than like a generic website panel with rounded corners.
 - Fighter cards and team cards should feel like part of the same collectible system while still being visually distinct from each other.
 - This visual language is applied consistently on homepage cards, leaderboard popups, and any future card-based surfaces.
+- Fighter cards should read as true trading-card objects with a stable, recognisable footprint that stays visually consistent across different pages and contexts.
 
 ### US-080 Rank and search the leaderboard by the most useful fantasy signals
 

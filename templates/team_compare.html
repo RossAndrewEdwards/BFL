@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% from "_tier_helpers.html" import render_tier_badge, render_tier_legend %}
+{% block content %}
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Team Comparison</span>
+      <h1>Compare two builds side by side.</h1>
+    </div>
+  </div>
+</section>
+<section class="panel" style="margin-top: 20px;">
+  <form method="get" class="form-grid two-col">
+    <label>Team A
+      <select name="team_a">
+        <option value=""></option>
+        {% for team in rows %}<option value="{{ team.id }}" {{ 'selected' if team_a == team.id else '' }}>{{ team.team_name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Team B
+      <select name="team_b">
+        <option value=""></option>
+        {% for team in rows %}<option value="{{ team.id }}" {{ 'selected' if team_b == team.id else '' }}>{{ team.team_name }}</option>{% endfor %}
+      </select>
+    </label>
+    <button type="submit">Compare</button>
+  </form>
+</section>
+{% if comparison %}
+<section class="profile-grid" style="margin-top: 20px;">
+  <article class="detail-card">
+    <h2>{{ comparison.team_a.team_name }}</h2>
+    <div class="detail-list" style="margin-top: 16px;">
+      <div class="detail-row"><span>Points</span><strong>{{ comparison.team_a.points }}</strong></div>
+      <div class="detail-row"><span>Glory</span><strong>{{ comparison.team_a.trait_totals[0].value }}</strong></div>
+      <div class="detail-row"><span>Synergy</span><strong>{{ comparison.team_a.trait_totals[5].value }}</strong></div>
+      <div class="detail-row"><span>Status</span><strong>{{ comparison.team_a.status }}</strong></div>
+    </div>
+  </article>
+  <article class="detail-card">
+    <h2>{{ comparison.team_b.team_name }}</h2>
+    <div class="detail-list" style="margin-top: 16px;">
+      <div class="detail-row"><span>Points</span><strong>{{ comparison.team_b.points }}</strong></div>
+      <div class="detail-row"><span>Glory</span><strong>{{ comparison.team_b.trait_totals[0].value }}</strong></div>
+      <div class="detail-row"><span>Synergy</span><strong>{{ comparison.team_b.trait_totals[5].value }}</strong></div>
+      <div class="detail-row"><span>Status</span><strong>{{ comparison.team_b.status }}</strong></div>
+    </div>
+  </article>
+</section>
+<div class="section-head">
+  <div>
+    <h2>Roster Windows</h2>
+    <p>Compare the actual fighter profiles inside each team, not just the totals.</p>
+  </div>
+</div>
+{{ render_tier_legend() }}
+<section class="compare-roster-layout">
+  <article class="panel">
+    <h3>{{ comparison.team_a.team_name }}</h3>
+    <div class="builder-compare-grid compact" style="margin-top: 18px;">
+      {% for fighter in comparison.team_a.fighters %}
+      <article class="fighter-window compact {{ fighter.tier_theme.class_name }}">
+        <div class="fighter-window-topline">
+          {{ render_tier_badge(fighter.tier, fighter.tier_theme) }}
+          <span class="pill">Cost {{ fighter.cost_used }}</span>
+        </div>
+        <h3>{{ fighter.name }}</h3>
+        <p class="meta">{{ fighter.nickname or fighter.preferred_role or fighter.fighting_style or 'Profile details to be updated.' }}</p>
+        <div class="split-stats">
+          {% if show_public_fighter_scores %}
+          <div class="mini-stat"><span>Points</span><strong>{{ fighter.total_points }}</strong></div>
+          {% else %}
+          <div class="mini-stat"><span>Rank</span><strong>#{{ fighter.rank }}</strong></div>
+          {% endif %}
+          <div class="mini-stat"><span>K/D</span><strong>{{ '%.2f'|format(fighter.kd_ratio) }}</strong></div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="panel">
+    <h3>{{ comparison.team_b.team_name }}</h3>
+    <div class="builder-compare-grid compact" style="margin-top: 18px;">
+      {% for fighter in comparison.team_b.fighters %}
+      <article class="fighter-window compact {{ fighter.tier_theme.class_name }}">
+        <div class="fighter-window-topline">
+          {{ render_tier_badge(fighter.tier, fighter.tier_theme) }}
+          <span class="pill">Cost {{ fighter.cost_used }}</span>
+        </div>
+        <h3>{{ fighter.name }}</h3>
+        <p class="meta">{{ fighter.nickname or fighter.preferred_role or fighter.fighting_style or 'Profile details to be updated.' }}</p>
+        <div class="split-stats">
+          {% if show_public_fighter_scores %}
+          <div class="mini-stat"><span>Points</span><strong>{{ fighter.total_points }}</strong></div>
+          {% else %}
+          <div class="mini-stat"><span>Rank</span><strong>#{{ fighter.rank }}</strong></div>
+          {% endif %}
+          <div class="mini-stat"><span>K/D</span><strong>{{ '%.2f'|format(fighter.kd_ratio) }}</strong></div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+<section class="feature-grid" style="margin-top: 20px;">
+  <article class="feature-card">
+    <h3>Overlap</h3>
+    <div class="pill-row">{% for fighter in comparison.overlap %}<span class="pill">{{ fighter.name }}</span>{% else %}<span class="meta">No shared fighters.</span>{% endfor %}</div>
+  </article>
+  <article class="feature-card">
+    <h3>Only {{ comparison.team_a.team_name }}</h3>
+    <div class="pill-row">{% for fighter in comparison.only_a %}<span class="pill">{{ fighter.name }}</span>{% else %}<span class="meta">No unique fighters.</span>{% endfor %}</div>
+  </article>
+  <article class="feature-card">
+    <h3>Only {{ comparison.team_b.team_name }}</h3>
+    <div class="pill-row">{% for fighter in comparison.only_b %}<span class="pill">{{ fighter.name }}</span>{% else %}<span class="meta">No unique fighters.</span>{% endfor %}</div>
+  </article>
+</section>
+{% endif %}
+{% endblock %}

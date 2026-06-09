@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% from "_tier_helpers.html" import render_tier_badge %}
+{% block content %}
+<section class="hero compact-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Hall of Fame</span>
+      <h1>Historic fantasy league results.</h1>
+      <p>Browse completed seasons, revisit final leaderboards, and compare fighter performance using locked historical snapshots.</p>
+    </div>
+    <div class="hero-meta">
+      <div class="summary-band">
+        <div class="mini-stat"><span>Completed seasons</span><strong>{{ seasons|length }}</strong></div>
+        <div class="mini-stat"><span>Selected season</span><strong>{{ selected_season.name if selected_season else 'None' }}</strong></div>
+        <div class="mini-stat"><span>Winner</span><strong>{{ selected_season.winner_team_name if selected_season and selected_season.winner_team_name else 'TBD' }}</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if not seasons %}
+<section class="panel" style="margin-top: 24px;">
+  <h2>No completed seasons yet</h2>
+  <p class="meta">The Hall of Fame will appear here once an admin ends the first season and stores the final historical snapshots.</p>
+</section>
+{% else %}
+<section class="panel" style="margin-top: 24px;">
+  <form method="get" class="form-grid two-col">
+    <label>Season
+      <select name="season">
+        {% for season in seasons %}
+        <option value="{{ season.id }}" {{ 'selected' if selected_season and selected_season.id == season.id else '' }}>{{ season.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Player or Team
+      <input type="search" name="team" value="{{ team_filter }}" placeholder="Search player, team, or manager">
+    </label>
+    <label>Fighter
+      <input type="search" name="fighter" value="{{ fighter_filter }}" placeholder="Search fighter name">
+    </label>
+    <div class="hero-actions">
+      <button type="submit">Apply Filters</button>
+      <a class="button secondary" href="{{ url_for('hall_of_fame', season=selected_season.id if selected_season else None) }}">Clear Filters</a>
+    </div>
+  </form>
+</section>
+
+<div class="section-head">
+  <div>
+    <h2>Completed Seasons</h2>
+    <p>Every ended season keeps its final standings frozen in time.</p>
+  </div>
+</div>
+
+<section class="feature-grid">
+  {% for season in seasons %}
+  <article class="feature-card">
+    <div class="ranking-meta-line">
+      <span class="pill {{ 'brand' if selected_season and selected_season.id == season.id else '' }}">{{ season.name }}</span>
+      <span>{{ season.completed_at[:10] if season.completed_at else season.ended_at[:10] }}</span>
+    </div>
+    <h3>{{ season.winner_team_name or 'Winner not recorded' }}</h3>
+    <p class="meta">{{ season.winner_player_name or 'No linked player recorded' }}</p>
+    <div class="pill-row">
+      {% for item in season.highlights %}
+      <span class="pill">{{ item }}</span>
+      {% endfor %}
+    </div>
+    <div class="table-wrap" style="margin-top: 16px;">
+      <table>
+        <thead>
+          <tr><th>Rank</th><th>Team</th><th>Player</th></tr>
+        </thead>
+        <tbody>
+          {% for row in season.leaderboard_preview %}
+          <tr>
+            <td>{{ row.rank or '--' }}</td>
+            <td>{{ row.team_name }}</td>
+            <td>{{ row.player_name or 'Unassigned' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top: 16px;"><a href="{{ url_for('hall_of_fame', season=season.id) }}">View season leaderboard</a></p>
+  </article>
+  {% endfor %}
+</section>
+
+<div class="section-head">
+  <div>
+    <h2>{{ selected_season.name }} Final Leaderboard</h2>
+    <p>Historical standings are loaded from season snapshots and do not change with current-season edits.</p>
+  </div>
+</div>
+
+<section class="profile-grid">
+  <article class="detail-card dark">
+    <h2>Season Winner</h2>
+    <div class="detail-list" style="margin-top: 18px;">
+      <div class="detail-row"><span>Winning team</span><strong>{{ selected_season.winner_team_name or 'No winner recorded' }}</strong></div>
+      <div class="detail-row"><span>Winning player</span><strong>{{ selected_season.winner_player_name or 'Unassigned' }}</strong></div>
+      <div class="detail-row"><span>Completed</span><strong>{{ selected_season.completed_at[:16].replace('T', ' ') if selected_season.completed_at else 'Unknown' }}</strong></div>
+    </div>
+    <div class="pill-row" style="margin-top: 18px;">
+      {% if top_team %}<span class="pill success">Top team: {{ top_team.team_name }}</span>{% endif %}
+      {% if top_fighter %}<span class="pill">Top fighter: {{ top_fighter.name }}</span>{% endif %}
+      {% if biggest_riser %}<span class="pill">Biggest riser: {{ biggest_riser.fighter_name }}</span>{% endif %}
+      {% if biggest_faller %}<span class="pill">Biggest faller: {{ biggest_faller.fighter_name }}</span>{% endif %}
+    </div>
+  </article>
+
+  <article class="detail-card">
+    <h2>Season Highlights</h2>
+    <div class="detail-list" style="margin-top: 18px;">
+      <div class="detail-row"><span>Top team</span><strong>{{ top_team.team_name if top_team else 'No ranked team' }}</strong></div>
+      <div class="detail-row"><span>Top fighter</span><strong>{{ top_fighter.name if top_fighter else 'No fighter snapshot' }}</strong></div>
+      <div class="detail-row"><span>Biggest cost rise</span><strong>{{ biggest_riser.fighter_name if biggest_riser else 'No cost rise' }}</strong></div>
+      <div class="detail-row"><span>Biggest cost drop</span><strong>{{ biggest_faller.fighter_name if biggest_faller else 'No cost drop' }}</strong></div>
+    </div>
+  </article>
+</section>
+
+<div class="table-wrap" style="margin-top: 20px;">
+  <table>
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Team</th>
+        <th>Player</th>
+        <th>Manager</th>
+        <th>Status</th>
+        <th>Points</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in leaderboard_rows %}
+      <tr>
+        <td>{{ row.rank or '--' }}</td>
+        <td>{{ row.team_name }}</td>
+        <td>{{ row.player_name or 'Unassigned' }}</td>
+        <td>{{ row.manager }}</td>
+        <td>{{ row.status }}</td>
+        <td>{{ row.points }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="table-empty-cell">No teams match these Hall of Fame filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section-head">
+  <div>
+    <h2>Historical Fighter Performance</h2>
+    <p>These records come from season snapshots, so future fighter edits will not rewrite this history.</p>
+  </div>
+</div>
+
+<section class="card-grid">
+  {% for fighter in fighter_rows[:24] %}
+  <article class="fighter-chip fighter-card-shell hall-of-fame-fighter-card {{ tier_theme(fighter.tier).class_name }}">
+    <div class="ranking-meta-line">
+      {{ render_tier_badge(fighter.tier, tier_theme(fighter.tier)) }}
+      <span>Season rank #{{ fighter.rank or '--' }}</span>
+    </div>
+    <h3>{{ fighter.name }}</h3>
+    {% if current_user and current_user['role'] == 'admin' %}
+    <p class="meta">Snapshot score {{ fighter.total_points }} · K/D {{ '%.2f'|format(fighter.kd_ratio) }}</p>
+    {% else %}
+    <p class="meta">Season rank, tier, medal output, and fighter discipline are shown from the historical snapshot.</p>
+    {% endif %}
+    <div class="pill-row">
+      <span class="pill">Gold {{ fighter.gold_medals }}</span>
+      <span class="pill">Silver {{ fighter.silver_medals }}</span>
+      <span class="pill">Bronze {{ fighter.bronze_medals }}</span>
+      <span class="pill">Competitions {{ fighter.competitions }}</span>
+    </div>
+    <div class="split-stats">
+      <div class="mini-stat"><span>Kills</span><strong>{{ fighter.kills }}</strong></div>
+      <div class="mini-stat"><span>Training</span><strong>{{ fighter.training }}</strong></div>
+      <div class="mini-stat"><span>Support</span><strong>{{ fighter.support }}</strong></div>
+      <div class="mini-stat"><span>Discipline</span><strong>{{ fighter.discipline_score }}</strong></div>
+    </div>
+  </article>
+  {% else %}
+  <article class="panel empty-state-card">
+    <h3>No fighters match your Hall of Fame filters.</h3>
+    <p class="meta">Try another season or clear the fighter search to view historical snapshot performance.</p>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

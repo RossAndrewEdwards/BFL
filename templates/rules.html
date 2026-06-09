@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero compact-hero rules-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Fantasy League Rules</span>
+      <h1>How the league works.</h1>
+      <p>Use this page to check roster limits, budget rules, scoring categories, and cost adjustments.</p>
+    </div>
+    <div class="hero-meta">
+      <div class="summary-band">
+        <div class="mini-stat"><span>Budget</span><strong>{{ settings.team_budget }}</strong></div>
+        <div class="mini-stat"><span>Roster min</span><strong>{{ settings.minimum_team_size }}</strong></div>
+        <div class="mini-stat"><span>Roster max</span><strong>{{ settings.maximum_team_size }}</strong></div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-actions">
+    <a class="button secondary" href="{{ url_for('index') }}">Back to Home</a>
+    {% if current_user %}
+    <a class="button" href="{{ url_for('leaderboard') }}">Current Leaderboard</a>
+    {% else %}
+    <a class="button" href="{{ url_for('contact') }}">Contact Us</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="rules-overview-grid">
+  <article class="landing-panel rules-overview-card">
+    <span class="eyebrow-chip">Build</span>
+    <h2>{{ settings.team_budget }} point budget</h2>
+    <p class="meta">Every fantasy team must stay inside the shared platform budget and roster limits.</p>
+  </article>
+  <article class="landing-panel rules-overview-card">
+    <span class="eyebrow-chip">Score</span>
+    <h2>{{ rules|length }} live scoring categories</h2>
+    <p class="meta">League admins score event outcomes directly, and those results drive fighter and team rankings.</p>
+  </article>
+  <article class="landing-panel rules-overview-card">
+    <span class="eyebrow-chip">Cards</span>
+    <h2>6 headline traits</h2>
+    <p class="meta">Public fighter and team cards are shaped by the platform-wide trait formulas shown below.</p>
+  </article>
+</section>
+
+<section class="landing-shell rules-shell">
+  <div class="landing-main rules-main-stack">
+    <article class="landing-panel primary-panel">
+      <div class="section-head compact-section-head">
+        <div>
+          <span class="eyebrow-chip">Scoring</span>
+          <h2>Points System</h2>
+          <p>Every completed event result feeds these scoring categories into fighter totals, team gains, and the leaderboard.</p>
+        </div>
+      </div>
+      <div class="rules-scroll">
+        <div class="rules-grid">
+          {% for rule in rules %}
+          <div class="rule-card">
+            <div>
+              <strong>{{ rule.label }}</strong>
+              <p>{{ rule.notes or 'No notes added yet.' }}</p>
+            </div>
+            <span>{{ rule.points }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </article>
+
+    <article class="landing-panel">
+      <div class="section-head compact-section-head">
+        <div>
+          <span class="eyebrow-chip">Trait Formulas</span>
+          <h2>How the six traits are calculated</h2>
+          <p>These six platform-wide formulas shape the player-facing fighter and team cards across every league.</p>
+        </div>
+      </div>
+      <div class="rules-grid rules-formula-grid">
+        {% for group in public_profile_formula_groups %}
+        <article class="rule-card">
+          <div>
+            <strong>{{ group.label }}</strong>
+            <p>{{ group.description }}</p>
+            <div class="pill-row rules-formula-pills">
+              {% for field in group.fields %}
+              <span class="pill">{{ field.label }} × {{ field.value|int if field.value == (field.value|int) else field.value }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          <span>{{ group.label[0] }}</span>
+        </article>
+        {% endfor %}
+      </div>
+    </article>
+  </div>
+
+  <aside class="landing-sidebar rules-sidebar">
+    <article class="landing-panel">
+      <span class="eyebrow-chip">Team Building</span>
+      <h2>Roster Rules</h2>
+      <div class="detail-list rules-detail-list">
+        <div class="detail-row"><span>Team budget</span><strong>{{ settings.team_budget }}</strong></div>
+        <div class="detail-row"><span>Minimum fighters</span><strong>{{ settings.minimum_team_size }}</strong></div>
+        <div class="detail-row"><span>Maximum fighters</span><strong>{{ settings.maximum_team_size }}</strong></div>
+        <div class="detail-row"><span>Cost mode</span><strong>{{ settings.cost_mode }}</strong></div>
+      </div>
+      <div class="tier-cost-grid">
+        <div class="mini-stat"><span>Tier 1 cost</span><strong>{{ settings.tier_1_cost }}</strong></div>
+        <div class="mini-stat"><span>Tier 2 cost</span><strong>{{ settings.tier_2_cost }}</strong></div>
+        <div class="mini-stat"><span>Tier 3 cost</span><strong>{{ settings.tier_3_cost }}</strong></div>
+      </div>
+    </article>
+
+    <article class="landing-panel">
+      <span class="eyebrow-chip">Ownership</span>
+      <h2>Cost Adjustments</h2>
+      <p class="meta">Ownership brackets adjust future fighter costs based on how popular a fighter is across valid teams.</p>
+      <div class="detail-list rules-detail-list">
+        {% for bracket in ownership_brackets %}
+        <div class="detail-row">
+          <span>{{ '%.0f'|format(bracket.lower_bound * 100) }}%+ owned</span>
+          <strong>{{ '+' if bracket.adjustment > 0 else '' }}{{ bracket.adjustment }}</strong>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="landing-panel rules-callout-panel">
+      <span class="eyebrow-chip">Using the Rules</span>
+      <h2>What this page controls</h2>
+      <p class="meta">These platform-wide settings affect roster building, fighter costs, event scoring, and the public cards shown across the site.</p>
+      <div class="shortcut-list rules-shortcut-list">
+        <a href="{{ url_for('index') }}"><strong>Back to Home</strong><span>Return to the shared landing page and calendar.</span></a>
+        {% if current_user %}
+        <a href="{{ url_for('leaderboard') }}"><strong>Current Leaderboard</strong><span>See how the latest scoring is affecting fighters and teams.</span></a>
+        {% else %}
+        <a href="{{ url_for('contact') }}"><strong>Contact Us</strong><span>Get help with access, support, or platform questions.</span></a>
+        {% endif %}
+      </div>
+    </article>
+  </aside>
+</section>
+{% endblock %}

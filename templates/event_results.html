@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% from "_card_templates.html" import render_fighter_card, render_team_card %}
+{% block content %}
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Event Results</span>
+      <h1>Latest completed fantasy event breakdown.</h1>
+      <p class="meta">This view turns the newest scored event into a readable story: standouts, leaderboard movement, and fantasy impact.</p>
+    </div>
+    <div class="hero-meta">
+      <div class="summary-band">
+        <div class="mini-stat"><span>Current leaderboard</span><strong><a href="{{ url_for('leaderboard') }}">Open</a></strong></div>
+        <div class="mini-stat"><span>Compare builds</span><strong><a href="{{ url_for('team_compare') }}">Teams</a></strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if event %}
+<section class="panel">
+  <div class="section-head">
+    <div>
+      <h2>{{ event.event_name }}</h2>
+      <p class="meta">{{ event.event_date }} - {{ event.summary }}</p>
+    </div>
+  </div>
+  <div class="summary-band event-impact-band">
+    <div class="mini-stat"><span>Scored fighters</span><strong>{{ top_fighters|length }}</strong></div>
+    <div class="mini-stat"><span>Scoring teams</span><strong>{{ top_teams|length }}</strong></div>
+    <div class="mini-stat"><span>Best team gain</span><strong>{{ best_team.event_points if best_team else 0 }}</strong></div>
+    <div class="mini-stat"><span>Biggest climber</span><strong>{% if team_movers %}{{ team_movers[0].team_name }}{% elif fighter_movers %}{{ fighter_movers[0].name }}{% else %}Held{% endif %}</strong></div>
+  </div>
+</section>
+
+<section class="landing-feature-grid">
+  <article class="landing-panel">
+    <div class="section-head compact-head">
+      <div>
+        <span class="eyebrow-chip">Fighter Standouts</span>
+        <h2>Event Ranking</h2>
+      </div>
+    </div>
+    <div class="card-grid fighter-card-track-grid">
+      {% for fighter in top_fighters[:3] %}
+      {{ render_fighter_card(
+        fighter,
+        fighter.public_display,
+        url_for('fighter_detail', fighter_id=fighter.fighter_id),
+        default_skins,
+        'Event Rank #' ~ fighter.event_rank,
+        fighter.public_display.summary
+      ) }}
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="landing-panel">
+    <div class="section-head compact-head">
+      <div>
+        <span class="eyebrow-chip">Team Event Gains</span>
+        <h2>Fantasy Teams</h2>
+      </div>
+    </div>
+    <div class="team-grid standings-grid">
+      {% for team in top_teams[:3] %}
+      {{ render_team_card(
+        team,
+        url_for('team_detail', team_id=team.id),
+        default_skins,
+        'Player ' ~ (team.player_name or 'Unassigned') ~ ' - Manager ' ~ team.manager,
+        [('Event points', team.event_points), ('Contributors', team.event_fighter_count)],
+        'event-team-card',
+        'Event Rank #' ~ team.event_rank,
+        team.team_name ~ ' was one of the strongest event gainers.',
+        4
+      ) }}
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="landing-feature-grid event-story-grid">
+  <article class="landing-panel event-story-panel">
+    <div class="section-head compact-head">
+      <div>
+        <span class="eyebrow-chip">Leaderboard Impact</span>
+        <h2>Who moved after this event</h2>
+      </div>
+    </div>
+    <div class="leaderboard-mover-stack">
+      {% for team in team_movers[:3] %}
+      <div class="leaderboard-mover-card">
+        <span class="rank-movement-badge is-{{ team.movement.direction }}">{{ team.movement.label }}</span>
+        <strong>{{ team.team_name }}</strong>
+        <p class="meta">Now {% if team.rank %}#{{ team.rank }}{% else %}unranked{% endif %} after +{{ team.event_points }} event points.</p>
+      </div>
+      {% endfor %}
+      {% for fighter in fighter_movers[:3] %}
+      <div class="leaderboard-mover-card">
+        <span class="rank-movement-badge is-{{ fighter.movement.direction }}">{{ fighter.movement.label }}</span>
+        <strong>{{ fighter.name }}</strong>
+        <p class="meta">Now {% if fighter.rank %}#{{ fighter.rank }}{% else %}unranked{% endif %} after +{{ fighter.event_points }} event points.</p>
+      </div>
+      {% endfor %}
+      {% if own_team %}
+      <div class="leaderboard-rival-callout own-impact-callout">
+        <p class="meta">Your event impact</p>
+        <h3><a href="{{ url_for('team_detail', team_id=own_team.id) }}">{{ own_team.team_name }}</a></h3>
+        <div class="summary-band">
+          <div class="mini-stat"><span>Rank</span><strong>{% if own_team.rank %}#{{ own_team.rank }}{% else %}--{% endif %}</strong></div>
+          <div class="mini-stat"><span>Event gain</span><strong>+{{ own_team.event_points }}</strong></div>
+          <div class="mini-stat"><span>Rival gap</span><strong>{{ (rival_team.points - own_team.points)|abs if rival_team else 0 }}</strong></div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </article>
+
+  <article class="landing-panel event-story-panel">
+    <div class="section-head compact-head">
+      <div>
+        <span class="eyebrow-chip">Readable Result Feed</span>
+        <h2>Every fighter result at a glance</h2>
+      </div>
+    </div>
+    <div class="event-result-feed">
+      {% for fighter in top_fighters %}
+      <article class="event-feed-row">
+        <div>
+          <div class="event-feed-topline">
+            <strong>{{ fighter.name }}</strong>
+            <span class="rank-movement-badge is-{{ fighter.movement.direction if fighter.movement else 'stay' }}">{{ fighter.movement.label if fighter.movement else 'Held' }}</span>
+          </div>
+          <p class="meta">{{ fighter.public_display.summary }}</p>
+        </div>
+        <div class="event-feed-points">
+          <strong>+{{ fighter.event_points }}</strong>
+          <span>event pts</span>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+{% if best_team %}
+<section class="panel">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow-chip">Best Team From This Event</span>
+      <h2><a href="{{ url_for('team_detail', team_id=best_team.id) }}">{{ best_team.team_name }}</a></h2>
+      <p class="meta">{{ best_team.team_name }} earned the strongest fantasy gain from this event alone.</p>
+    </div>
+  </div>
+  <div class="summary-band">
+    <div class="mini-stat"><span>Event points</span><strong>{{ best_team.event_points }}</strong></div>
+    <div class="mini-stat"><span>Current rank</span><strong>#{{ best_team.rank if best_team.rank else 'Unranked' }}</strong></div>
+    <div class="mini-stat"><span>Scoring fighters</span><strong>{{ best_team.event_fighter_count }}</strong></div>
+  </div>
+</section>
+{% endif %}
+{% else %}
+<article class="panel empty-state-card">
+  <h2>No completed event results yet.</h2>
+  <p class="meta">Results will appear here after the first event has been scored by an admin.</p>
+</article>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,670 @@
+{% extends "base.html" %}
+{% from "_tier_helpers.html" import render_tier_legend %}
+{% block content %}
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Team Builder Wizard</span>
+      <h1>{{ 'Edit Team' if team else 'Build a New Team' }}</h1>
+      <p>Set up the team details first, then move into fighter selection while the builder keeps the live budget and rule checks visible.</p>
+    </div>
+    <div class="hero-meta">
+      <div class="summary-band">
+        <div class="mini-stat"><span>Budget</span><strong>{{ team_budget }}</strong></div>
+        <div class="mini-stat"><span>Minimum</span><strong>{{ minimum_team_size }}</strong></div>
+        <div class="mini-stat"><span>Maximum</span><strong>{{ maximum_team_size }}</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="builder-layout" style="margin-top: 24px;">
+  <form method="post" class="panel roster-builder-form" id="team-builder-form" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <div class="wizard-stepper" aria-label="Team builder steps">
+      <div class="wizard-step is-active" data-step-indicator="1">
+        <span class="wizard-step-number">1</span>
+        <div>
+          <strong>Team Details</strong>
+          <p>Set the team basics before picking fighters.</p>
+        </div>
+      </div>
+      <div class="wizard-step" data-step-indicator="2">
+        <span class="wizard-step-number">2</span>
+        <div>
+          <strong>Choose Fighters</strong>
+          <p>Build the roster with cards, filters, and live validation.</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="wizard-panel is-active" data-wizard-step="1">
+      <div class="section-head">
+        <div>
+          <h2>Step 1 · Team Details</h2>
+          <p>Choose the team identity and ownership details before moving to roster building.</p>
+        </div>
+      </div>
+      <div class="form-grid two-col">
+        <label>Team Name <input name="team_name" value="{{ team.team_name if team else '' }}" required data-step-one-required></label>
+        <label>Manager <input name="manager" value="{{ team.manager if team else '' }}" required data-step-one-required></label>
+        {% if show_player_select is not defined or show_player_select %}
+        <label>Player
+          <select name="player_user_id">
+            <option value="">Unassigned player</option>
+            {% for player in players %}
+            <option value="{{ player.id }}" {{ 'selected' if team and team.player_user_id == player.id else '' }}>
+              {{ player.display_name }}{% if player.managed_team_count %} (Has team){% else %} (No team yet){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </label>
+        {% else %}
+        <input type="hidden" name="player_user_id" value="{{ builder_owner.id }}">
+        <div class="field-note">
+          <span>Player</span>
+          <strong>{{ builder_owner.display_name }}</strong>
+        </div>
+        {% endif %}
+        <label class="full">Team Image
+          <input name="team_image" type="file" accept="image/png,image/jpeg,image/gif,image/webp">
+          <span class="hint">Optional. JPG, PNG, GIF, or WebP up to 4MB.</span>
+        </label>
+        <label>Image Credit
+          <input name="image_credit" value="{{ team.image_credit if team and team.image_credit else '' }}" placeholder="Artist or photographer">
+        </label>
+        <label>Image Source URL
+          <input name="image_source_url" value="{{ team.image_source_url if team and team.image_source_url else '' }}" placeholder="https://...">
+        </label>
+      </div>
+      <div class="builder-actions wizard-actions">
+        <button type="button" class="button" id="wizard-next-button">Continue to Fighter Selection</button>
+      </div>
+    </section>
+
+    <section class="wizard-panel" data-wizard-step="2" hidden>
+
+      <div class="section-head">
+        <div>
+          <h2>Step 2 · Choose Fighters</h2>
+          <p>Filter the card pool, then drag a fighter into your roster or use the add button on touch devices.</p>
+        </div>
+      </div>
+
+      <section class="panel builder-filter-panel">
+        <div class="builder-filter-grid">
+          <label>
+            <span>Search</span>
+            <input type="search" id="fighter-search" placeholder="Search fighter name">
+          </label>
+          <label>
+            <span>Tier</span>
+            <select id="fighter-tier-filter">
+              <option value="">All tiers</option>
+              {% for tier in fighters|map(attribute='tier')|unique|list %}
+              <option value="{{ tier }}">{{ tier }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            <span>Min cost</span>
+            <input type="number" id="fighter-cost-min" min="0" placeholder="0">
+          </label>
+          <label>
+            <span>Max cost</span>
+            <input type="number" id="fighter-cost-max" min="0" placeholder="{{ team_budget }}">
+          </label>
+          <label>
+            <span>Status</span>
+            <select id="fighter-status-filter">
+              <option value="">All statuses</option>
+              <option value="available">Available</option>
+              <option value="selected">Selected</option>
+              <option value="unavailable">Unavailable</option>
+            </select>
+          </label>
+        </div>
+        <div class="table-toolbar-actions" style="margin-top: 16px;">
+          <p class="meta" id="fighter-pool-count">Showing 0 fighters</p>
+          <div class="hero-actions">
+            <button type="button" class="button secondary" id="reset-fighter-filters">Clear Filters</button>
+          </div>
+        </div>
+      </section>
+
+      {{ render_tier_legend() }}
+
+      <section class="builder-pool-grid" id="available-fighter-grid" aria-live="polite"></section>
+
+      <div class="section-head">
+        <div>
+          <h2>Team Roster</h2>
+          <p>Drop fighters into open slots or tap add to build the final submission order.</p>
+        </div>
+      </div>
+
+      <div class="builder-roster-grid" id="team-roster-grid" aria-live="polite"></div>
+      <div id="hidden-fighter-inputs">
+        {% for slot in range(maximum_team_size) %}
+        <input type="hidden" name="fighter_ids" value="{{ selected[slot] if selected|length > slot else '' }}" data-roster-slot="{{ slot + 1 }}">
+        {% endfor %}
+      </div>
+
+      <div class="builder-actions wizard-actions">
+        <button type="button" class="button secondary" id="wizard-back-button">Back to Team Details</button>
+        <button type="submit" id="save-team-button">Save Team</button>
+      </div>
+    </section>
+  </form>
+
+  <aside class="builder-sidebar">
+    <article class="detail-card dark">
+      <h2>Live Team Summary</h2>
+      <div class="stats-grid compact-stats">
+        <div><span>Selected</span><strong id="summary-count">0</strong></div>
+        <div><span>Total Cost</span><strong id="summary-cost">0</strong></div>
+        <div><span>Remaining</span><strong id="summary-remaining">{{ team_budget }}</strong></div>
+        <div><span>Status</span><strong id="summary-status">Building</strong></div>
+      </div>
+      <p class="meta" id="summary-message" style="margin-top: 18px;">Choose fighters to start building a valid roster.</p>
+      <p class="meta" id="selection-guidance" style="margin-top: 10px;">Drag fighters into the roster or use the add button below each card.</p>
+      <div class="builder-live-feedback" id="builder-live-feedback" aria-live="polite">No roster changes yet.</div>
+      <div class="builder-warning-list" id="builder-warning-list"></div>
+    </article>
+  </aside>
+</section>
+
+<div class="section-head">
+  <div>
+    <h2>Selected Fighter Windows</h2>
+    <p>Every selected fighter appears here so managers can compare form, output, and style inside the same team build.</p>
+  </div>
+</div>
+
+{{ render_tier_legend() }}
+
+<section class="builder-compare-grid" id="selected-fighter-grid" aria-live="polite"></section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (() => {
+    const fighterProfiles = {{ fighter_profiles|tojson }};
+    const budget = {{ team_budget|int }};
+    const minimumTeamSize = {{ minimum_team_size|int }};
+    const maximumTeamSize = {{ maximum_team_size|int }};
+    const profileMap = new Map(fighterProfiles.map((fighter) => [String(fighter.id), fighter]));
+    const hiddenInputs = Array.from(document.querySelectorAll('#hidden-fighter-inputs input[name="fighter_ids"]'));
+    const summaryCount = document.getElementById('summary-count');
+    const summaryCost = document.getElementById('summary-cost');
+    const summaryRemaining = document.getElementById('summary-remaining');
+    const summaryStatus = document.getElementById('summary-status');
+    const summaryMessage = document.getElementById('summary-message');
+    const selectionGuidance = document.getElementById('selection-guidance');
+    const liveFeedback = document.getElementById('builder-live-feedback');
+    const warningList = document.getElementById('builder-warning-list');
+    const selectedGrid = document.getElementById('selected-fighter-grid');
+    const rosterGrid = document.getElementById('team-roster-grid');
+    const availableGrid = document.getElementById('available-fighter-grid');
+    const fighterPoolCount = document.getElementById('fighter-pool-count');
+    const saveButton = document.getElementById('save-team-button');
+    const searchInput = document.getElementById('fighter-search');
+    const tierFilter = document.getElementById('fighter-tier-filter');
+    const costMinInput = document.getElementById('fighter-cost-min');
+    const costMaxInput = document.getElementById('fighter-cost-max');
+    const statusFilter = document.getElementById('fighter-status-filter');
+    const resetFiltersButton = document.getElementById('reset-fighter-filters');
+    const form = document.getElementById('team-builder-form');
+    const wizardPanels = Array.from(document.querySelectorAll('[data-wizard-step]'));
+    const wizardIndicators = Array.from(document.querySelectorAll('[data-step-indicator]'));
+    const nextButton = document.getElementById('wizard-next-button');
+    const backButton = document.getElementById('wizard-back-button');
+    let dragPayload = null;
+    let activeWizardStep = 1;
+    let lastRosterAction = 'No roster changes yet.';
+
+    function setWizardStep(step) {
+      activeWizardStep = step;
+      wizardPanels.forEach((panel) => {
+        const isActive = Number(panel.getAttribute('data-wizard-step')) === step;
+        panel.hidden = !isActive;
+        panel.classList.toggle('is-active', isActive);
+      });
+      wizardIndicators.forEach((indicator) => {
+        const indicatorStep = Number(indicator.getAttribute('data-step-indicator'));
+        indicator.classList.toggle('is-active', indicatorStep === step);
+        indicator.classList.toggle('is-complete', indicatorStep < step);
+      });
+    }
+
+    function validateWizardStepOne() {
+      const requiredFields = Array.from(document.querySelectorAll('[data-step-one-required]'));
+      const firstInvalid = requiredFields.find((field) => !field.value.trim());
+      if (firstInvalid) {
+        firstInvalid.reportValidity();
+        firstInvalid.focus();
+        return false;
+      }
+      return true;
+    }
+
+    function formatRatio(value) {
+      return Number(value || 0).toFixed(2);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function getSelectedIds() {
+      return hiddenInputs.map((input) => input.value).filter(Boolean);
+    }
+
+    function getSelections() {
+      return hiddenInputs
+        .map((input, index) => ({ id: input.value, slot: index + 1 }))
+        .filter((entry) => entry.id && profileMap.has(entry.id))
+        .map((entry) => ({ ...entry, fighter: profileMap.get(entry.id) }));
+    }
+
+    function firstOpenSlot() {
+      return hiddenInputs.findIndex((input) => !input.value);
+    }
+
+    function computeSummaryState(selections) {
+      const fighterIds = selections.map(({ id }) => id);
+      const uniqueIds = new Set(fighterIds);
+      const hasDuplicates = uniqueIds.size !== fighterIds.length;
+      const totalCost = selections.reduce((sum, entry) => sum + Number(entry.fighter.cost_used || 0), 0);
+      const remaining = budget - totalCost;
+      const count = selections.length;
+      const warnings = [];
+      let status = 'Building';
+      let message = 'Add fighters to complete the roster.';
+
+      if (hasDuplicates) warnings.push('This roster contains duplicate fighters.');
+      if (remaining < 0) warnings.push('This roster is over the budget cap.');
+      if (count < minimumTeamSize) warnings.push(`Choose at least ${minimumTeamSize} fighters.`);
+      if (count > maximumTeamSize) warnings.push(`The roster can contain at most ${maximumTeamSize} fighters.`);
+
+      if (hasDuplicates) {
+        status = 'Duplicate';
+        message = 'Remove duplicate fighters before saving.';
+      } else if (remaining < 0) {
+        status = 'Over Budget';
+        message = 'Trim cost before saving this roster.';
+      } else if (count < minimumTeamSize) {
+        status = 'Incomplete';
+        message = `Choose at least ${minimumTeamSize} fighters to create a valid team.`;
+      } else if (count > maximumTeamSize) {
+        status = 'Too Large';
+        message = `This roster exceeds the maximum of ${maximumTeamSize} fighters.`;
+      } else {
+        status = 'Valid';
+        message = 'This roster is inside the size and budget rules.';
+      }
+
+      return { count, totalCost, remaining, status, message, warnings, isValid: warnings.length === 0 };
+    }
+
+    function computeAvailability(fighter, selections, summary) {
+      const selectedIds = new Set(selections.map((entry) => entry.id));
+      if (selectedIds.has(String(fighter.id))) {
+        return { key: 'selected', label: 'Selected', reason: 'Already in your roster.' };
+      }
+      if (summary.count >= maximumTeamSize) {
+        return { key: 'unavailable', label: 'Roster full', reason: 'Remove a fighter before adding another.' };
+      }
+      if (Number(fighter.cost_used || 0) > Math.max(summary.remaining, 0) && summary.count >= minimumTeamSize) {
+        return { key: 'unavailable', label: 'Over budget', reason: 'This fighter would push the roster beyond the budget cap.' };
+      }
+      if (Number(fighter.cost_used || 0) > budget) {
+        return { key: 'unavailable', label: 'Unavailable', reason: 'This fighter costs more than the full team budget.' };
+      }
+      return { key: 'available', label: 'Available', reason: 'Ready to add to your roster.' };
+    }
+
+    function renderWarningList(warnings) {
+      if (!warnings.length) {
+        warningList.innerHTML = '<p class="meta">Frontend checks mirror the main roster rules, but the backend will still validate everything on save.</p>';
+        return;
+      }
+      warningList.innerHTML = warnings.map((warning) => `<p class="builder-warning">${escapeHtml(warning)}</p>`).join('');
+    }
+
+    function renderEmptyState() {
+      selectedGrid.innerHTML = `
+        <article class="panel empty-builder-state">
+          <h3>No fighters selected yet</h3>
+          <p class="meta">Start picking fighters from the card pool and their scouting windows will appear here automatically.</p>
+        </article>
+      `;
+    }
+
+    function renderSelectedWindows(selections) {
+      if (!selections.length) {
+        renderEmptyState();
+        return;
+      }
+      selectedGrid.innerHTML = selections.map(({ fighter, slot }) => `
+        <article class="fighter-window ${escapeHtml(fighter.tier_theme.class_name)}">
+          <div class="fighter-window-topline">
+            <span class="pill brand">Slot ${slot}</span>
+            <span class="tier-badge ${escapeHtml(fighter.tier_theme.class_name)}">${escapeHtml(fighter.tier || fighter.tier_theme.label)}</span>
+            <span class="pill">Cost ${fighter.cost_used}</span>
+          </div>
+          <h3>${escapeHtml(fighter.name)}</h3>
+          <p class="meta">${escapeHtml(fighter.nickname || fighter.preferred_role || fighter.fighting_style || 'Profile details to be updated.')}</p>
+          ${fighter.hero_quote ? `<blockquote class="fighter-quote">"${escapeHtml(fighter.hero_quote)}"</blockquote>` : ''}
+          <div class="split-stats">
+            <div class="mini-stat"><span>Points</span><strong>${fighter.total_points}</strong></div>
+            <div class="mini-stat"><span>Kills</span><strong>${fighter.kills}</strong></div>
+            <div class="mini-stat"><span>K/D</span><strong>${formatRatio(fighter.kd_ratio)}</strong></div>
+            <div class="mini-stat"><span>Competitions</span><strong>${fighter.competitions}</strong></div>
+          </div>
+          <div class="pill-row">
+            <span class="pill">Gold ${fighter.gold_medals}</span>
+            <span class="pill">Support ${fighter.support}</span>
+            <span class="pill">Training ${fighter.training}</span>
+          </div>
+          <p class="fighter-window-copy">${escapeHtml(fighter.bio || fighter.notes || 'Scouting notes will appear here as profiles are filled out.')}</p>
+        </article>
+      `).join('');
+    }
+
+    function renderSummary(summary) {
+      summaryCount.textContent = String(summary.count);
+      summaryCost.textContent = String(summary.totalCost);
+      summaryRemaining.textContent = String(summary.remaining);
+      summaryStatus.textContent = summary.status;
+      summaryMessage.textContent = summary.message;
+      liveFeedback.textContent = lastRosterAction;
+      liveFeedback.className = `builder-live-feedback ${summary.isValid ? 'is-valid' : 'is-warning'}`;
+      saveButton.disabled = !summary.isValid;
+      renderWarningList(summary.warnings);
+    }
+
+    function syncHiddenInputs(values, compact = false) {
+      const nextValues = compact ? values.filter(Boolean) : values;
+      hiddenInputs.forEach((input, index) => {
+        input.value = nextValues[index] || '';
+      });
+    }
+
+    function addFighterToRoster(fighterId) {
+      const selectedIds = getSelectedIds();
+      if (selectedIds.includes(fighterId)) {
+        lastRosterAction = `${profileMap.get(fighterId)?.name || 'That fighter'} is already in your roster.`;
+        return false;
+      }
+      if (selectedIds.length >= maximumTeamSize) {
+        lastRosterAction = 'Your roster is full. Remove a fighter before adding another.';
+        return false;
+      }
+      const openSlot = firstOpenSlot();
+      if (openSlot === -1) {
+        lastRosterAction = 'No open slot is available for another fighter.';
+        return false;
+      }
+      hiddenInputs[openSlot].value = fighterId;
+      lastRosterAction = `${profileMap.get(fighterId)?.name || 'Fighter'} added to slot ${openSlot + 1}.`;
+      return true;
+    }
+
+    function removeFighterFromSlot(slotIndex) {
+      const selectedIds = getSelectedIds();
+      const removedId = selectedIds[slotIndex];
+      selectedIds.splice(slotIndex, 1);
+      syncHiddenInputs(selectedIds, true);
+      lastRosterAction = `${profileMap.get(removedId)?.name || 'Fighter'} removed from your roster.`;
+    }
+
+    function moveRosterItem(fromIndex, toIndex) {
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+      const selectedIds = hiddenInputs.map((input) => input.value);
+      const fromValue = selectedIds[fromIndex];
+      if (!fromValue) return;
+      const targetValue = selectedIds[toIndex];
+      selectedIds[toIndex] = fromValue;
+      selectedIds[fromIndex] = targetValue || '';
+      syncHiddenInputs(selectedIds);
+      lastRosterAction = `${profileMap.get(fromValue)?.name || 'Fighter'} moved to slot ${toIndex + 1}.`;
+    }
+
+    function renderRoster(selections, summary) {
+      rosterGrid.innerHTML = hiddenInputs.map((input, index) => {
+        const fighterId = input.value;
+        if (!fighterId || !profileMap.has(fighterId)) {
+          return `
+          <article class="builder-roster-slot is-empty" data-slot-index="${index}">
+              <div>
+                <span class="builder-slot-label">Slot ${index + 1}</span>
+                <h3>Open slot</h3>
+                <p class="meta">${summary.count >= maximumTeamSize ? 'Roster is full.' : 'Drag a fighter card here or tap add from the pool.'}</p>
+              </div>
+            </article>
+          `;
+        }
+        const fighter = profileMap.get(fighterId);
+        return `
+          <article class="builder-roster-slot ${escapeHtml(fighter.tier_theme.class_name)}" data-slot-index="${index}" draggable="true" data-source="roster" data-fighter-id="${fighterId}">
+            <div class="fighter-window-topline">
+              <span class="pill brand">Slot ${index + 1}</span>
+              <span class="tier-badge ${escapeHtml(fighter.tier_theme.class_name)}">${escapeHtml(fighter.tier || fighter.tier_theme.label)}</span>
+              <span class="pill">Cost ${fighter.cost_used}</span>
+            </div>
+            <h3>${escapeHtml(fighter.name)}</h3>
+            <p class="meta">${escapeHtml(fighter.nickname || fighter.preferred_role || fighter.fighting_style || 'Profile details to be updated.')}</p>
+            <p class="builder-slot-feedback">Tap remove to free this slot, or drag this fighter to another open slot.</p>
+            <div class="pill-row">
+              <button type="button" class="button secondary builder-roster-action" data-action="remove" data-slot-index="${index}">Remove</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function fighterMatchesFilters(fighter, availability) {
+      const searchNeedle = searchInput.value.trim().toLowerCase();
+      const tierValue = tierFilter.value;
+      const statusValue = statusFilter.value;
+      const minCost = Number(costMinInput.value || 0);
+      const maxCost = costMaxInput.value === '' ? Infinity : Number(costMaxInput.value);
+      const fighterCost = Number(fighter.cost_used || 0);
+      const matchesSearch = !searchNeedle || fighter.name.toLowerCase().includes(searchNeedle);
+      const matchesTier = !tierValue || fighter.tier === tierValue;
+      const matchesMin = fighterCost >= minCost;
+      const matchesMax = fighterCost <= maxCost;
+      const matchesStatus = !statusValue || availability.key === statusValue;
+      return matchesSearch && matchesTier && matchesMin && matchesMax && matchesStatus;
+    }
+
+    function renderAvailablePool(selections, summary) {
+      const cards = fighterProfiles
+        .map((fighter) => {
+          const availability = computeAvailability(fighter, selections, summary);
+          return { fighter, availability };
+        })
+        .filter(({ fighter, availability }) => fighterMatchesFilters(fighter, availability));
+
+      fighterPoolCount.textContent = `Showing ${cards.length} fighter${cards.length === 1 ? '' : 's'}`;
+
+      if (!cards.length) {
+        availableGrid.innerHTML = `
+          <article class="panel empty-builder-state">
+            <h3>No fighters match these filters</h3>
+            <p class="meta">Try clearing the search, widening the cost range, or switching the availability filter.</p>
+          </article>
+        `;
+        return;
+      }
+
+      availableGrid.innerHTML = cards.map(({ fighter, availability }) => `
+        <article class="fighter-chip fighter-card-shell builder-fighter-card ${escapeHtml(fighter.tier_theme.class_name)}" draggable="true" data-source="pool" data-fighter-id="${fighter.id}">
+          <img class="fighter-card-image" src="${escapeHtml(fighter.image_url || {{ default_skins.fighter.url|tojson }})}" alt="${escapeHtml(fighter.name)} profile image">
+          <div class="ranking-meta-line">
+            <span class="tier-badge ${escapeHtml(fighter.tier_theme.class_name)}">${escapeHtml(fighter.tier || fighter.tier_theme.label)}</span>
+            <span>${escapeHtml(availability.label)}</span>
+            <span>Cost ${fighter.cost_used}</span>
+          </div>
+          <h3>${escapeHtml(fighter.name)}</h3>
+          <p class="meta">${escapeHtml(fighter.nickname || fighter.preferred_role || fighter.fighting_style || 'Profile details to be updated.')}</p>
+          <p class="builder-card-feedback">${escapeHtml(availability.reason)}</p>
+          <div class="split-stats">
+            <div class="mini-stat"><span>Points</span><strong>${fighter.total_points}</strong></div>
+            <div class="mini-stat"><span>K/D</span><strong>${formatRatio(fighter.kd_ratio)}</strong></div>
+          </div>
+          <div class="pill-row">
+            <span class="pill">Kills ${fighter.kills}</span>
+            <span class="pill">Competitions ${fighter.competitions}</span>
+          </div>
+          <div class="builder-card-actions">
+            <button type="button" class="button ${availability.key === 'available' ? '' : 'secondary'}" data-action="add" data-fighter-id="${fighter.id}" title="${escapeHtml(availability.reason)}" ${availability.key === 'available' ? '' : 'disabled'}>
+              ${availability.key === 'selected' ? 'Already Selected' : availability.key === 'unavailable' ? availability.label : 'Add to Team'}
+            </button>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function updateGuidance(summary) {
+      const openSlots = maximumTeamSize - summary.count;
+      if (summary.count >= maximumTeamSize) {
+        selectionGuidance.textContent = 'Your roster is full. Remove a fighter before adding another.';
+      } else if (summary.remaining < 0) {
+        selectionGuidance.textContent = 'Some fighters are unavailable because the roster is over budget. Remove cost before saving.';
+      } else {
+        selectionGuidance.textContent = `${openSlots} open slot${openSlots === 1 ? '' : 's'} remaining. Drag fighters into the roster or tap add to fill them.`;
+      }
+    }
+
+    function refreshBuilder() {
+      const selections = getSelections();
+      const summary = computeSummaryState(selections);
+      renderSummary(summary);
+      renderRoster(selections, summary);
+      renderAvailablePool(selections, summary);
+      renderSelectedWindows(selections);
+      updateGuidance(summary);
+    }
+
+    function clearFilters() {
+      searchInput.value = '';
+      tierFilter.value = '';
+      costMinInput.value = '';
+      costMaxInput.value = '';
+      statusFilter.value = '';
+      lastRosterAction = 'Filters cleared. Showing the full fighter pool again.';
+      refreshBuilder();
+    }
+
+    function handleDropOnSlot(targetIndex) {
+      if (!dragPayload) return;
+      if (dragPayload.source === 'pool') {
+        const currentIds = hiddenInputs.map((input) => input.value);
+        if (currentIds.includes(dragPayload.fighterId)) return;
+        if (currentIds[targetIndex]) return;
+        currentIds[targetIndex] = dragPayload.fighterId;
+        syncHiddenInputs(currentIds);
+      } else if (dragPayload.source === 'roster') {
+        moveRosterItem(dragPayload.slotIndex, targetIndex);
+      }
+      dragPayload = null;
+      refreshBuilder();
+    }
+
+    availableGrid.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action="add"]');
+      if (!button) return;
+      addFighterToRoster(button.dataset.fighterId);
+      refreshBuilder();
+    });
+
+    rosterGrid.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action="remove"]');
+      if (!button) return;
+      removeFighterFromSlot(Number(button.dataset.slotIndex));
+      refreshBuilder();
+    });
+
+    [searchInput, tierFilter, costMinInput, costMaxInput, statusFilter].forEach((element) => {
+      element.addEventListener('input', refreshBuilder);
+      element.addEventListener('change', refreshBuilder);
+    });
+
+    resetFiltersButton.addEventListener('click', clearFilters);
+
+    nextButton.addEventListener('click', () => {
+      if (!validateWizardStepOne()) return;
+      setWizardStep(2);
+    });
+
+    backButton.addEventListener('click', () => {
+      setWizardStep(1);
+    });
+
+    availableGrid.addEventListener('dragstart', (event) => {
+      const card = event.target.closest('[data-source="pool"]');
+      if (!card) return;
+      dragPayload = { source: 'pool', fighterId: card.dataset.fighterId };
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = 'copy';
+    });
+
+    rosterGrid.addEventListener('dragstart', (event) => {
+      const card = event.target.closest('[data-source="roster"]');
+      if (!card) return;
+      dragPayload = { source: 'roster', fighterId: card.dataset.fighterId, slotIndex: Number(card.dataset.slotIndex) };
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+    });
+
+    rosterGrid.addEventListener('dragover', (event) => {
+      const slot = event.target.closest('[data-slot-index]');
+      if (!slot) return;
+      event.preventDefault();
+      slot.classList.add('is-drop-target');
+    });
+
+    rosterGrid.addEventListener('dragleave', (event) => {
+      const slot = event.target.closest('[data-slot-index]');
+      if (!slot) return;
+      slot.classList.remove('is-drop-target');
+    });
+
+    rosterGrid.addEventListener('drop', (event) => {
+      const slot = event.target.closest('[data-slot-index]');
+      if (!slot) return;
+      event.preventDefault();
+      slot.classList.remove('is-drop-target');
+      handleDropOnSlot(Number(slot.dataset.slotIndex));
+    });
+
+    rosterGrid.addEventListener('dragend', () => {
+      dragPayload = null;
+      rosterGrid.querySelectorAll('.is-drop-target').forEach((slot) => slot.classList.remove('is-drop-target'));
+    });
+
+    form.addEventListener('submit', (event) => {
+      if (!validateWizardStepOne()) {
+        event.preventDefault();
+        setWizardStep(1);
+        return;
+      }
+      const summary = computeSummaryState(getSelections());
+      if (!summary.isValid) {
+        event.preventDefault();
+        setWizardStep(2);
+        renderSummary(summary);
+        updateGuidance(summary);
+      }
+    });
+
+    setWizardStep(1);
+    refreshBuilder();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero compact-hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow-chip">Season Control</span>
+      <h1>{{ season.name }}</h1>
+      <p>
+        {% if locked %}
+        This season is completed and locked. Team edits, event result changes, and scoring updates are blocked until an admin reopens it.
+        {% else %}
+        Ending the season stores the final leaderboard, winner, team standings, fighter performance, and next-season cost updates.
+        {% endif %}
+      </p>
+    </div>
+    <div class="hero-meta">
+      <div class="summary-band">
+        <div class="mini-stat"><span>Status</span><strong>{{ 'Locked' if locked else 'Open' }}</strong></div>
+        <div class="mini-stat"><span>Teams</span><strong>{{ preview_teams|length }}</strong></div>
+        <div class="mini-stat"><span>Winner</span><strong>{{ (preview_teams[0].team_name if preview_teams and preview_teams[0].rank == 1 else 'TBD') }}</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if locked %}
+<section class="panel" style="margin-top: 20px;">
+  <h2>Reopen Season</h2>
+  <p class="meta">Reopening unlocks team changes, event results, and scoring edits for this completed season.</p>
+  <form method="post" action="{{ url_for('admin_reopen_season') }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <button type="submit">Reopen {{ season.name }}</button>
+  </form>
+</section>
+{% else %}
+<section class="panel" style="margin-top: 20px;">
+  <h2>Confirm End Season</h2>
+  <p class="meta">This is a high-impact action. Type <strong>END SEASON</strong> below to confirm.</p>
+  <form method="post" id="end-season-form">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <label class="narrow">Confirmation text
+      <input name="confirmation_text" autocomplete="off" placeholder="END SEASON" required>
+    </label>
+    <div class="builder-warning-list" style="margin: 16px 0;">
+      <p class="builder-warning">After completion, scoring changes, team changes, and event result changes are locked until an admin explicitly reopens the season.</p>
+    </div>
+    <button type="submit" id="end-season-button">End {{ season.name }}</button>
+  </form>
+</section>
+{% endif %}
+
+<section class="profile-grid" style="margin-top: 20px;">
+  <article class="detail-card">
+    <h2>Leaderboard Preview</h2>
+    <div class="table-wrap" style="margin-top: 16px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Team</th>
+            <th>Player</th>
+            <th>Points</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in preview_teams[:10] %}
+          <tr>
+            <td>{{ row.rank or '--' }}</td>
+            <td>{{ row.team_name }}</td>
+            <td>{{ row.player_name or 'Unassigned' }}</td>
+            <td>{{ row.points }}</td>
+            <td>{{ row.status }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="table-empty-cell">No teams are available for this season yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="detail-card">
+    <h2>Cost Formula Preview</h2>
+    <div class="detail-list" style="margin-top: 16px;">
+      <div class="detail-row"><span>Target pick rate</span><strong>{{ '%.0f'|format(formula.target_pick_rate * 100) }}%</strong></div>
+      <div class="detail-row"><span>Sensitivity</span><strong>{{ formula.sensitivity }}</strong></div>
+      <div class="detail-row"><span>Clamp</span><strong>{{ '%.0f'|format(formula.adjustment_cap * 100) }}%</strong></div>
+      <div class="detail-row"><span>Round unit</span><strong>{{ formula.round_unit }}</strong></div>
+      <div class="detail-row"><span>Min / max cost</span><strong>{{ formula.min_cost }} / {{ formula.max_cost }}</strong></div>
+    </div>
+  </article>
+</section>
+
+<section class="panel" style="margin-top: 20px;">
+  <h2>Largest Fighter Cost Changes</h2>
+  <div class="table-wrap" style="margin-top: 16px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Fighter</th>
+          <th>Pick Rate</th>
+          <th>Old Cost</th>
+          <th>New Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in preview_changes %}
+        <tr>
+          <td>{{ row.fighter_name }}</td>
+          <td>{{ '%.0f'|format(row.pick_rate * 100) }}%</td>
+          <td>{{ row.old_cost }}</td>
+          <td>{{ row.new_cost }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="table-empty-cell">No fighters are available to preview cost changes.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if not locked %}
+<script>
+  (() => {
+    const form = document.getElementById('end-season-form');
+    const button = document.getElementById('end-season-button');
+    if (!form || !button) return;
+    form.addEventListener('submit', () => {
+      button.disabled = true;
+      button.textContent = 'Ending season...';
+    });
+  })();
+</script>
+{% endif %}
+{% endblock %}

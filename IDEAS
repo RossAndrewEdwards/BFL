@@ -1,0 +1,163 @@
+- when you are not logged in and go to the home page there are two of the same links that take you to league rules or login. In the members only portion dont bother to show a link to the rules or login as we have something already in place.
+- Also the league rules and login button under the hero image when are you not logged in is very stretched
+- in the rules page the layout looks a bit weird as it has three tables side by side then a page width table. Lets make shows the rules consistent
+- Lets make sure whenever we show a team card it looks like a trading card, we shouldn't have multiple different formats depending which page you are on. Lets use the home page cards as the template. And whenver we adjust that template it changes what the team cards look like everywhere to keep consistency
+- Lets make sure whenever we show a player card it looks like a trading card, we shouldn't have multiple different formats depending which page you are on. Lets use the home page cards as the template. And whenver we adjust that template it changes what the player cards look like everywhere to keep consistency
+- I want a 1 to 1 mapping of players to teams, we no longer need to adjust how many teams a player can have. This means we no longer need the concept of manager. Just map a team to a player. Get rid of the manager slots concept.
+- In the My teams page I no longer need a search and filter section
+- We dont need a description under the title of every single page. lets get rid of that and free up more page space
+- In the admin fighters section move the +support button to the events workspace table instead.
+- in the admin fighters section we don't need to state "Defaults to 2026-05-25 · Season 1" this uses too much space and makes the page way too long.
+- in the admin fighters section we dont need to show tier, cost or total. It should be an easy way for the league admin to +1 training for the fighter. We should try to make the page more compact so I dont need to scroll a lot.
+- in the events admin area, I no longer need Add Result as the Scoring Workspace is much better
+- As a league admin in the league players area I should be able to promote someone to league admin
+- as an platform admin I dont need to see the season 1 section  in the admin dashboard. 
+- as an platfor madmin I dont need to see operational signals in teh admin dashboard
+- as an platform admin I dont need a Recent platform activity section in the admin dashboard I can just go to the relevant audit pages
+- in the platform admin dashboard move the links for Leagues, Season settings, rules and settings, players, media and audit & rollback to the top of the page as they are the most useful
+- as a platform admin when I am edditing or creating a team I only need to put down a quota for the maximum players, I dont need maximum teams as we have a 1 to 1 mapping of players to teams in each league
+- as a platform admin when edditing a league I dont need to see the league members or teams as I can just go to the relevant link in the league operations
+- as a platform admin when I go to the player section the title of the page is league players when it should just be Players.
+- in the platform admin dashboard get rid of the admin media page. I no longer need it.
+on team card no need add totals for the six traits lets keep the team card simple
+
+Fighter profile
+    dont need to performance snapshot remove it
+    Dont show KD
+    fame score what is it? we have crowd favourite so we can probably get rid of fame 
+    add these to the fighter profile
+    - Age
+    - Height (m)
+    - Weight (kg)
+    - nickname
+    - fighting style
+    - Role Or Weapon of choice
+    - Known For
+    - Description and why Buhurt
+    - Joined (year)
+show the card of the fighter on the profile
+show overall points
+Lifetime stats but dont use these for the season points or traits This is to show a history of the fighter
+
+Fighter Edits
+    Players should be able to go to a fighters profile and request an edit and submit the request. This request will go to the league admin, where the league admin can look at submitted requests to review the changes and accept or deny if accepted it would then update the fighter. If accepted or denied then the player should be able to go to a notifications page that only relates to them to see what happened.
+    Players should be able to request to the league admin to create a new fighter
+
+event results
+    With the new scoring workspace lets let all players be able to view the event results, we should be able to see how well the groups have done
+    We should also put an event history on the fighter profile when they have particiapted at an event and show just that fighters stats for an event.
+
+Training
+    Lets create a dedicated page for submitting training data.
+    The league admin should be able to create groups similar to how the event workspace works and be able to +1 if someone has gone to training or not. We dont need a submit button like the workspace however, just go and update if the player has attended training. The groups should persist and should be able to be minimized so that it does not clutter the screen. The idea is a league admin can create training groups for days of training where some fighters regularly attend dates throughout the week
+
+fighter cards
+    using the new descriptive fields from the fighter profile lets add some of them to the fighter card.
+    
+
+**As a fantasy league player,**  
+I want fighter profiles to look like collectible battle cards,  
+so that browsing fighters feels more engaging than a normal table.
+
+### Acceptance Criteria
+
+- Given I view a fighter card, then the layout should visually separate the fighter image, profile details, and combat stats.
+- Given I view the card, then the design should feel inspired by a collectible stat card.
+- Given the card is displayed, then it must use original Invicta branding and must not copy the Top Trumps logo, exact design, or protected artwork.
+
+### Suggested Card Sections
+
+#### Header
+
+- Fighter name
+- Nickname
+- Role / Weapon of choice
+
+#### Image Area
+
+- Fighter photo
+- Fallback image if missing
+
+#### Profile / Fact File
+
+- Age
+- Height
+- Weight
+- Fighting style
+- Known For
+- Joined year
+
+#### Description
+
+- Short description
+- Why they do Buhurt
+
+#### Stats
+
+- Glory
+- Discipline
+- Lethality
+- Resilience
+- Crowd Favourite
+- Synergy
+
+---
+
+Show Fighter Image with Fallback Support
+
+**As a fantasy league player,**  
+I want each fighter card to show a fighter image,  
+so that the card feels personal and easy to recognise.
+
+### Acceptance Criteria
+
+- Given a fighter has an image, when their card is displayed, then the image should appear prominently on the card.
+- Given a fighter does not have an image, when their card is displayed, then a default placeholder image should be shown.
+- Given the image is a different size or shape, when it is displayed, then it should be cropped consistently and not distort.
+
+### Implementation Notes
+
+Use an image container with:
+
+- Fixed aspect ratio
+- `object-fit: cover`
+- Rounded corners
+- Optional dark border or frame
+
+---
+
+**As a fantasy league player,**  
+I want to see descriptive fighter information on each card,  
+so that I understand who the fighter is beyond just their stats.
+
+### Acceptance Criteria
+
+- Given a fighter card is displayed, then I should see their age, height, weight, fighting style, role or weapon, known for, and joined year.
+- Given the fighter has a description, then the card should show a short version of the description.
+- Given the description is too long, then the card should truncate it neatly or display it in an expandable area.
+
+### Descriptor Fields
+
+```typescript
+age: number;
+heightM: number;
+weightKg: number;
+nickname: string;
+fightingStyle: string;
+roleOrWeapon: string;
+knownFor: string;
+description: string;
+joinedYear: number;
+
+Leadboards
+fix leaderboard ranking based on -points not the traits
+search on name for team + fighter
+
+a league admin should be able to quickly add medals or special awards to fighters on an ad hoc basis not through the events workspace 
+
+in the admin season setting section training and support attendence value should belong in the rules settings and not here
+
+in the admin rule settings the league settings and season end settings should belong in the season settings
+
+Lets let all users be able to choose either dark or light mode
+

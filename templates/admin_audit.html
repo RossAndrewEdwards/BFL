@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_table_toolbar.html" import render_table_toolbar %}
+{% block content %}
+<div id="admin-audit-page-content" data-filter-region>
+<h1>Admin Audit and Rollback</h1>
+{{ render_table_toolbar(toolbar) }}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>League</th>
+        <th>Actor</th>
+        <th>Entity</th>
+        <th>Action</th>
+        <th>Message</th>
+        <th>Details</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.created_at[:16].replace('T', ' ') }}</td>
+        <td>{{ row.league_name_display }}</td>
+        <td>{{ row.actor_name or 'System' }}</td>
+        <td>{{ row.entity_type }}{% if row.entity_id %} #{{ row.entity_id }}{% endif %}</td>
+        <td>{{ row.action }}</td>
+        <td>{{ row.message }}</td>
+        <td>
+          {% if row.before_preview or row.after_preview %}
+          <details class="audit-details">
+            <summary>View change</summary>
+            {% if row.before_preview %}
+            <strong>Before</strong>
+            <pre>{{ row.before_preview }}</pre>
+            {% endif %}
+            {% if row.after_preview %}
+            <strong>After</strong>
+            <pre>{{ row.after_preview }}</pre>
+            {% endif %}
+          </details>
+          {% else %}
+          <span class="meta">No diff stored</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if row.rollback_type %}
+          <form method="post" action="{{ url_for('admin_audit_rollback', audit_id=row.id) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="link-button">Rollback</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="table-empty-cell">No audit entries match your filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>
+{% endblock %}

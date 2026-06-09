@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% from "_card_templates.html" import render_fighter_card, render_team_card %}
+{% block content %}
+<section class="landing-shell">
+  <div class="landing-main">
+    <section class="home-hero compact-home-hero image-hero" style="--hero-image: url('{{ landing_images.hero.url }}');">
+      <div class="home-hero-copy">
+        <p class="meta">
+          {% if current_user and current_league %}
+          League spotlight: {{ current_league.name }}
+          {% else %}
+          Welcome to Buhurt Fantasy League
+          {% endif %}
+        </p>
+        <a class="image-credit" href="{{ landing_images.hero.source }}" target="_blank" rel="noopener">
+          Image: {{ landing_images.hero.credit }} - {{ landing_images.hero.license }}
+        </a>
+      </div>
+    </section>
+
+    <div class="hero-actions">
+      {% if current_user %}
+      <a class="button" href="{{ url_for('public_event_results') }}">Full Event Results</a>
+      <a class="button secondary" href="{{ url_for('leaderboard') }}">Current Leaderboard</a>
+      {% else %}
+      <a class="button" href="{{ url_for('public_rules') }}">League Rules</a>
+      <a class="button secondary" href="{{ url_for('login') }}">Login</a>
+      {% endif %}
+    </div>
+
+    {% if current_user %}
+      {% if latest_event_results %}
+      {% set latest_event = latest_event_results.event %}
+      <section class="landing-panel feature-panel">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow-chip">Latest Completed Event</span>
+            <h2>{{ latest_event.event_name }}</h2>
+            <p class="meta">{{ latest_event.event_date }} - {{ latest_event.summary }}</p>
+          </div>
+          <a class="button secondary" href="{{ url_for('public_event_results') }}">Open Event Breakdown</a>
+        </div>
+        <div class="summary-band">
+          <div class="mini-stat"><span>Event date</span><strong>{{ latest_event.event_date }}</strong></div>
+          <div class="mini-stat"><span>Scored fighters</span><strong>{{ latest_event.result_count }}</strong></div>
+          <div class="mini-stat"><span>Best fantasy team</span><strong>{{ latest_event_results.best_team.team_name if latest_event_results.best_team else 'TBD' }}</strong></div>
+        </div>
+      </section>
+
+      <section class="landing-feature-grid">
+        <article class="landing-panel">
+          <div class="section-head compact-head">
+            <div>
+              <span class="eyebrow-chip">Top 3 Fighters</span>
+              <h2>Latest Event Standouts</h2>
+            </div>
+            {% if latest_event_results.top_fighters|length > 1 %}
+            <div class="carousel-controls" aria-label="Top fighters carousel controls">
+              <button type="button" class="carousel-arrow" data-carousel-prev="fighters" aria-label="Show previous fighter">&#8249;</button>
+              <button type="button" class="carousel-arrow" data-carousel-next="fighters" aria-label="Show next fighter">&#8250;</button>
+            </div>
+            {% endif %}
+          </div>
+          <div class="home-carousel" data-carousel="fighters" data-carousel-interval="5000">
+            {% for fighter in latest_event_results.top_fighters %}
+            <div class="carousel-slide{% if loop.first %} is-active{% endif %}"{% if not loop.first %} hidden{% endif %}>
+              <div class="carousel-card">
+                <div class="carousel-progress" aria-hidden="true"><span class="carousel-progress-bar"></span></div>
+                {{ render_fighter_card(
+                  fighter,
+                  fighter.public_display,
+                  url_for('fighter_detail', fighter_id=fighter.fighter_id),
+                  default_skins,
+                  'Event Rank #' ~ fighter.event_rank
+                ) }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </article>
+
+        <article class="landing-panel">
+          <div class="section-head compact-head">
+            <div>
+              <span class="eyebrow-chip">Top 3 Teams</span>
+              <h2>Best Event Gains</h2>
+            </div>
+            {% if latest_event_results.top_teams|length > 1 %}
+            <div class="carousel-controls" aria-label="Top teams carousel controls">
+              <button type="button" class="carousel-arrow" data-carousel-prev="teams" aria-label="Show previous team">&#8249;</button>
+              <button type="button" class="carousel-arrow" data-carousel-next="teams" aria-label="Show next team">&#8250;</button>
+            </div>
+            {% endif %}
+          </div>
+          <div class="home-carousel team-carousel" data-carousel="teams" data-carousel-interval="6500">
+            {% for team in latest_event_results.top_teams %}
+            <div class="carousel-slide{% if loop.first %} is-active{% endif %}"{% if not loop.first %} hidden{% endif %}>
+              <div class="carousel-card home-team-carousel-card">
+                <div class="carousel-progress" aria-hidden="true"><span class="carousel-progress-bar"></span></div>
+                {{ render_team_card(
+                  team,
+                  url_for('team_detail', team_id=team.id),
+                  default_skins,
+                  'Player ' ~ (team.player_name or 'Unassigned') ~ ' - Manager ' ~ team.manager,
+                  [('Event points', team.event_points), ('Contributors', team.event_fighter_count), ('Points', team.points)],
+                  'home-team-card',
+                  'Event Rank #' ~ team.event_rank,
+                  team.team_name ~ ' posted one of the strongest event gains from ' ~ latest_event.event_name ~ '.',
+                  4,
+                  'Current total ' ~ team.points
+                ) }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </article>
+      </section>
+
+      <section class="landing-panel">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow-chip">Event Winner</span>
+            <h2>{{ latest_event_results.best_team.team_name if latest_event_results.best_team else 'No team scored yet' }}</h2>
+            <p class="meta">
+              {% if latest_event_results.best_team %}
+              {{ latest_event_results.best_team.team_name }} earned the biggest event-only fantasy jump from {{ latest_event.event_name }}.
+              {% else %}
+              Once fantasy teams have scoring fighters in an event, the biggest single-event gain will appear here.
+              {% endif %}
+            </p>
+          </div>
+        </div>
+        {% if latest_event_results.best_team %}
+        <div class="summary-band">
+          <div class="mini-stat"><span>Event points</span><strong>{{ latest_event_results.best_team.event_points }}</strong></div>
+          <div class="mini-stat"><span>Current team rank</span><strong>#{{ latest_event_results.best_team.rank if latest_event_results.best_team.rank else 'Unranked' }}</strong></div>
+          <div class="mini-stat"><span>Scoring fighters</span><strong>{{ latest_event_results.best_team.event_fighter_count }}</strong></div>
+        </div>
+        {% endif %}
+      </section>
+      {% else %}
+      <article class="landing-panel empty-state-card">
+        <span class="eyebrow-chip">Results Pending</span>
+        <h2>No completed event results yet.</h2>
+        <p class="meta">Event highlights, top fighters, and event-only team swings will appear here after the first scored event is added.</p>
+        <div class="hero-actions">
+          <a class="button secondary" href="{{ url_for('leaderboard') }}">Current Leaderboard</a>
+        </div>
+      </article>
+      {% endif %}
+    {% else %}
+    <article class="landing-panel empty-state-card">
+      <span class="eyebrow-chip">Members Only</span>
+      <h2>League standings and fighter data are available after login.</h2>
+      <p class="meta">Guests can explore the rules and upcoming Buhurt UK calendar from this page, while league members can log in to view fighters, teams, and event results.</p>
+    </article>
+    {% endif %}
+  </div>
+
+  <aside class="landing-sidebar">
+    <article class="landing-panel tournament-feature">
+      <figure class="landing-media-card">
+        <img src="{{ landing_images.combat.url }}" alt="{{ landing_images.combat.alt }}" loading="lazy">
+        <figcaption>
+          <a href="{{ landing_images.combat.source }}" target="_blank" rel="noopener">
+            {{ landing_images.combat.credit }} - {{ landing_images.combat.license }}
+          </a>
+        </figcaption>
+      </figure>
+      <div class="section-head compact-head">
+        <div>
+          <span class="eyebrow-chip">Next Tournament</span>
+          <h2>Buhurt UK Calendar</h2>
+        </div>
+        <a class="button secondary" href="https://mcsagb.co.uk/uk-events" target="_blank" rel="noopener">UK Events</a>
+      </div>
+
+      {% if next_tournament %}
+      <a class="next-tournament-card" href="{{ next_tournament.url }}" target="_blank" rel="noopener">
+        <span class="tournament-date">{{ next_tournament.date }}</span>
+        <strong>{{ next_tournament.name }}</strong>
+        <span>{{ next_tournament.location }}</span>
+      </a>
+      {% else %}
+      <p class="meta">Tournament listings are temporarily unavailable.</p>
+      {% endif %}
+
+      <div class="tournament-list compact-tournament-list">
+        {% for event in upcoming_tournaments %}
+        <a class="tournament-row" href="{{ event.url }}" target="_blank" rel="noopener">
+          <span class="tournament-date">{{ event.date }}</span>
+          <span class="tournament-main">
+            <strong>{{ event.name }}</strong>
+            <span>{{ event.location }}</span>
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="landing-panel">
+      <h2>Quick Links</h2>
+      <div class="shortcut-list">
+        <a href="{{ url_for('public_rules') }}"><strong>League Rules</strong><span>Budget, roster size, and scoring structure.</span></a>
+        <a href="{{ url_for('contact') }}"><strong>Contact Us</strong><span>Platform help and league support routing.</span></a>
+        {% if current_user %}
+        <a href="{{ url_for('public_event_results') }}"><strong>Full Event Results</strong><span>See the complete breakdown for the latest scored event.</span></a>
+        <a href="{{ url_for('leaderboard') }}"><strong>Current Leaderboard</strong><span>Track fighter and team standings in one place.</span></a>
+        <a href="{{ url_for('my_team') }}"><strong>My Teams</strong><span>Create and manage your linked teams.</span></a>
+        {% else %}
+        <a href="{{ url_for('login') }}"><strong>Login</strong><span>Manager and admin access.</span></a>
+        {% endif %}
+      </div>
+    </article>
+  </aside>
+</section>
+{% endblock %}
+{% block scripts %}
+{% if current_user %}
+<script>
+  (() => {
+    const carousels = document.querySelectorAll("[data-carousel]");
+    carousels.forEach((carousel) => {
+      const key = carousel.dataset.carousel;
+      const slides = Array.from(carousel.querySelectorAll(".carousel-slide"));
+      if (!slides.length) {
+        return;
+      }
+
+      const prevButton = document.querySelector(`[data-carousel-prev="${key}"]`);
+      const nextButton = document.querySelector(`[data-carousel-next="${key}"]`);
+      const intervalMs = Number(carousel.dataset.carouselInterval || 5000);
+      let activeIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
+      let timerId = null;
+
+      if (activeIndex < 0) {
+        activeIndex = 0;
+      }
+
+      const showSlide = (nextIndex) => {
+        activeIndex = (nextIndex + slides.length) % slides.length;
+        slides.forEach((slide, index) => {
+          const isActive = index === activeIndex;
+          slide.hidden = !isActive;
+          slide.classList.toggle("is-active", isActive);
+          slide.setAttribute("aria-hidden", String(!isActive));
+        });
+      };
+
+      const resetProgress = () => {
+        slides.forEach((slide, index) => {
+          const bar = slide.querySelector(".carousel-progress-bar");
+          if (!bar) {
+            return;
+          }
+
+          bar.style.transition = "none";
+          bar.style.width = "0%";
+          void bar.offsetWidth;
+          if (index === activeIndex) {
+            bar.style.transition = `width ${intervalMs}ms linear`;
+            bar.style.width = "100%";
+          }
+        });
+      };
+
+      if (slides.length === 1) {
+        showSlide(0);
+        resetProgress();
+        return;
+      }
+
+      const stopAutoAdvance = () => {
+        if (timerId !== null) {
+          window.clearInterval(timerId);
+          timerId = null;
+        }
+      };
+
+      const startAutoAdvance = () => {
+        stopAutoAdvance();
+        resetProgress();
+        timerId = window.setInterval(() => {
+          showSlide(activeIndex + 1);
+          resetProgress();
+        }, intervalMs);
+      };
+
+      prevButton?.addEventListener("click", () => {
+        showSlide(activeIndex - 1);
+        startAutoAdvance();
+      });
+
+      nextButton?.addEventListener("click", () => {
+        showSlide(activeIndex + 1);
+        startAutoAdvance();
+      });
+
+      showSlide(activeIndex);
+      startAutoAdvance();
+    });
+  })();
+</script>
+{% endif %}
+{% endblock %}
