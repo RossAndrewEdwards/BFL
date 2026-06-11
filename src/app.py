@@ -137,7 +137,7 @@ from src.support.season import (
 )
 from dataclasses import asdict
 from src.support.tournament import (
-    BuhurtCalendarClient,
+    BuhurtCalendarCoordinator,
     BuhurtEvent,
     parse_event_date_range as build_parse_event_date_range,
     fallback_buhurt_uk_tournaments as build_fallback_buhurt_uk_tournaments,
@@ -624,24 +624,26 @@ def fallback_buhurt_uk_tournaments():
 
 
 def buhurt_uk_calendar_events(conn):
-    client = BuhurtCalendarClient(
+    coordinator = BuhurtCalendarCoordinator(
+        conn,
         cache_key=BUHURT_UK_CALENDAR_CACHE_KEY,
         cache_hours=BUHURT_UK_CACHE_HOURS,
         events_url=BUHURT_UK_EVENTS_URL,
         fallback_events=FALLBACK_BUHURT_UK_TOURNAMENTS,
     )
-    events = client.get_calendar_events(conn, is_testing=app.config.get("TESTING"))
+    events = coordinator.get_calendar_events(is_testing=app.config.get("TESTING"))
     return [asdict(e) for e in events]
 
 
 def upcoming_buhurt_uk_tournaments(conn):
-    client = BuhurtCalendarClient(
+    coordinator = BuhurtCalendarCoordinator(
+        conn,
         cache_key=BUHURT_UK_CALENDAR_CACHE_KEY,
         cache_hours=BUHURT_UK_CACHE_HOURS,
         events_url=BUHURT_UK_EVENTS_URL,
         fallback_events=FALLBACK_BUHURT_UK_TOURNAMENTS,
     )
-    events = client.get_upcoming_tournaments(conn, limit=6, is_testing=app.config.get("TESTING"))
+    events = coordinator.get_upcoming_tournaments(limit=6, is_testing=app.config.get("TESTING"))
     return [asdict(e) for e in events]
 
 
@@ -858,15 +860,14 @@ def home_payload(conn):
 
 def sync_calendar_event_banners(conn):
     calendar_events = buhurt_uk_calendar_events(conn)
-    client = BuhurtCalendarClient(
+    coordinator = BuhurtCalendarCoordinator(
+        conn,
         cache_key=BUHURT_UK_CALENDAR_CACHE_KEY,
         cache_hours=BUHURT_UK_CACHE_HOURS,
         events_url=BUHURT_UK_EVENTS_URL,
         fallback_events=FALLBACK_BUHURT_UK_TOURNAMENTS,
     )
-    events = [BuhurtEvent(**e) for e in calendar_events]
-    active_leagues = conn.execute("SELECT id FROM leagues WHERE status='active'").fetchall()
-    return client.sync_banners(conn, events, active_leagues=active_leagues)
+    return coordinator.sync_banners(events=calendar_events, is_testing=app.config.get("TESTING"))
 
 
 def save_team(team_id=None, forced_player_user_id=None):

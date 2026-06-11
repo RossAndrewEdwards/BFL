@@ -8,25 +8,11 @@
   <div class="fighter-card-hero" style="--fighter-card-image: url('{{ fighter.image_url or default_skins.fighter.url }}');" role="img" aria-label="{{ fighter.name }} profile image">
     <div class="collector-card-foil" aria-hidden="true"></div>
     <div class="collector-card-topline">
-      <span class="collector-card-type">Fighter Card</span>
       <span class="collector-card-serial">{{ fighter_edition }} Edition</span>
     </div>
-    <div class="fighter-card-rank-badge {{ 'is-muted' if not fighter.rank else '' }}">
-      {% if fighter.rank %}#{{ fighter.rank }}{% else %}--{% endif %}
-    </div>
-    <div class="collector-card-corner collector-card-corner-left">
-      <span class="collector-card-corner-label">Role</span>
-      <strong>{{ fighter_role }}</strong>
-    </div>
-    <div class="collector-card-corner collector-card-corner-right">
-      <span class="collector-card-corner-label">Series</span>
-      <strong>{{ fighter.joined_year or 'Modern' }}</strong>
-    </div>
+
     <div class="fighter-card-overlay">
       <div class="ranking-meta-line fighter-card-overlay-meta">
-        {% if fighter.tier %}
-        <span>{{ fighter.tier }}</span>
-        {% endif %}
         {% if eyebrow_text %}
         <span>{{ eyebrow_text }}</span>
         {% endif %}
@@ -38,19 +24,17 @@
   </div>
   <div class="collector-card-lower">
   {{ image_attribution(fighter.image_credit, fighter.image_source_url, default_skins.fighter.credit if not fighter.image_url else '', default_skins.fighter.source if not fighter.image_url else '') }}
-{% if submeta_text %}
+{% if submeta_text and submeta_text != 'None' and submeta_text != '' %}
   <p class="meta fighter-card-submeta">{{ submeta_text }}</p>
-  {% elif fighter.nickname or fighter.role_or_weapon or fighter.preferred_role or fighter.fighting_style %}
-  <p class="meta fighter-card-submeta">{{ fighter.nickname or fighter.role_or_weapon or fighter.preferred_role or fighter.fighting_style }}</p>
+  {% elif fighter.nickname and fighter.nickname != 'None' and fighter.nickname != '' %}
+  <p class="meta fighter-card-submeta">{{ fighter.nickname }}</p>
   {% endif %}
   {% set resolved_summary = summary_text if summary_text is not none else public_display.summary %}
   {% if resolved_summary and resolved_summary != 'None' %}
   <p class="meta fighter-card-summary">{{ resolved_summary }}</p>
   {% endif %}
   <div class="collector-chip-row">
-    <span class="collector-chip">Rank {% if fighter.rank %}#{{ fighter.rank }}{% else %}Unranked{% endif %}</span>
     <span class="collector-chip">{{ fighter_role }}</span>
-    <span class="collector-chip">{{ fighter_edition }}</span>
   </div>
   <div class="collector-card-divider" aria-hidden="true"></div>
   {{ render_public_fighter_summary(fighter, public_display) }}
@@ -71,29 +55,12 @@
     <div class="team-card-hero" style="--team-card-image: url('{{ team_image }}');" role="img" aria-label="{{ team.team_name }} team image">
       <div class="collector-card-foil" aria-hidden="true"></div>
       <div class="collector-card-topline">
-        <span class="collector-card-type">Fantasy Team Card</span>
-        <span class="collector-card-serial">{% if team.rank %}Rank #{{ team.rank }}{% else %}League Team{% endif %}</span>
-      </div>
-      <div class="team-card-rank-badge {{ 'is-muted' if not (team.event_rank or team.rank) else '' }}">
-        {% if team.event_rank %}
-        #{{ team.event_rank }}
-        {% elif team.rank %}
-        #{{ team.rank }}
-        {% else %}
-        --
-        {% endif %}
+        <span class="collector-card-serial">Fantasy Team</span>
       </div>
       <div class="team-card-emblem" aria-hidden="true">
         <span>{{ (team.team_name or 'T')[:2]|upper }}</span>
       </div>
-      <div class="collector-card-corner collector-card-corner-left">
-        <span class="collector-card-corner-label">Owner</span>
-        <strong>{{ team.player_name or 'Open Slot' }}</strong>
-      </div>
-      <div class="collector-card-corner collector-card-corner-right">
-        <span class="collector-card-corner-label">Build</span>
-        <strong>{{ team.manager }}</strong>
-      </div>
+
       <div class="team-card-overlay">
         <div class="team-card-overlay-meta">
           <span class="pill {{ 'success' if team.status == 'VALID' else 'warning' }}">{{ resolved_eyebrow }}</span>
@@ -108,7 +75,6 @@
     {{ image_attribution(team.image_credit, team.image_source_url, default_skins.team.credit if not team.image_path else '', default_skins.team.source if not team.image_path else '') }}
     <p class="meta team-card-summary">{{ resolved_summary }}</p>
     <div class="collector-chip-row">
-      <span class="collector-chip">{% if team.rank %}League Rank #{{ team.rank }}{% else %}League Team{% endif %}</span>
       <span class="collector-chip">{{ team.player_name or 'Open Slot' }}</span>
       <span class="collector-chip">{{ team.manager }}</span>
     </div>

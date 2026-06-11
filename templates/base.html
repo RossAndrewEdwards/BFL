@@ -9,7 +9,11 @@
       const resolvedTheme = storedTheme === "dark" || storedTheme === "light"
         ? storedTheme
         : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-      document.documentElement.dataset.theme = resolvedTheme;
+      if (resolvedTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     })();
   </script>
   <title>
@@ -231,7 +235,11 @@
   };
 
   const applyTheme = (theme) => {
-    root.dataset.theme = theme;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
     window.localStorage.setItem("bfl-theme", theme);
     buttons.forEach((button) => {
       button.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
@@ -239,12 +247,12 @@
     });
   };
 
-  const currentTheme = root.dataset.theme === "dark" ? "dark" : "light";
+  const currentTheme = root.classList.contains("dark") ? "dark" : "light";
   applyTheme(currentTheme);
 
   buttons.forEach((button) => {
     button.addEventListener("click", () => {
-      applyTheme(root.dataset.theme === "dark" ? "light" : "dark");
+      applyTheme(root.classList.contains("dark") ? "light" : "dark");
     });
   });
 })();

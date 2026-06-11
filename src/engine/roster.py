@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional
 from src.exceptions import ValidationError
 from src.support import scoring as scoring_support
 from src.support.ui import tier_theme
+from src.engine.performance import FighterPerformanceEngine
 
 # =====================================================================
 # Constants & Defaults
@@ -393,7 +394,7 @@ class RosterRankingsEngine:
             stats_rows.append(row)
 
         # 8. Normalize metrics to 0-100 ratings
-        scoring_support.apply_public_profile_ratings(stats_rows, PUBLIC_PROFILE_STAT_ORDER, formula_settings)
+        FighterPerformanceEngine(conn).calculate_ratings(stats_rows, formula_settings)
 
         # 9. Sort by overall rating, total points, and name
         stats_rows.sort(key=lambda r: (-r["overall_rating"], -r["total_points"], r["name"]))

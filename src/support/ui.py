@@ -204,6 +204,118 @@ def build_reset_url(path, persist_params, urlencode_fn):
     return f"{path}?{urlencode_fn(persist_params, doseq=True)}"
 
 
+class CollectionFilterCoordinator:
+    """
+    Deep coordinator class to encapsulate collection filtering, query search matching,
+    and sorting logic.
+    """
+    def __init__(self, rows, query_text_fn, urlencode_fn):
+        self.rows = list(rows)
+        self.query_text_fn = query_text_fn
+        self.urlencode_fn = urlencode_fn
+
+    def apply(
+        self,
+        query_args,
+        request_path,
+        search_fields,
+        filters=None,
+        sort_options=None,
+        default_sort="default",
+        search_placeholder="Search",
+        param_prefix="",
+    ):
+        rows = self.rows
+        filters = filters or []
+        sort_options = sort_options or []
+        search_param = f"{param_prefix}q"
+        sort_param = f"{param_prefix}sort"
+        used_params = {search_param, sort_param}
+        search_value = query_args.get(search_param, "").strip()
+
+        filtered_rows = rows
+        if search_value:
+            filtered_rows = [
+                row for row in filtered_rows
+                if matches_search_query(row, search_value, search_fields, self.query_text_fn)
+            ]
+
+        toolbar_filters = []
+        for filter_def in filters:
+            param = f"{param_prefix}{filter_def['name']}"
+            used_params.add(param)
+            selected = query_args.get(param, "").strip()
+            options = filter_def.get("options")
+            if callable(options):
+                options = options(rows)
+            elif options is None:
+                options = filter_option_rows(rows, filter_def["field"], self.query_text_fn)
+            options = normalize_toolbar_options(options)
+
+            if selected:
+                if "predicate" in filter_def:
+                    filtered_rows = [row for row in filtered_rows if filter_def["predicate"](row, selected)]
+                else:
+                    match_type = filter_def.get("match", "exact")
+                    filtered_rows = [
+                        row for row in filtered_rows
+                        if (
+                            self.query_text_fn(selected) in self.query_text_fn(row_value(row, filter_def["field"]))
+                            if match_type == "contains"
+                            else self.query_text_fn(row_value(row, filter_def["field"])) == self.query_text_fn(selected)
+                        )
+                    ]
+
+            toolbar_filters.append(
+                {
+                    "name": param,
+                    "label": filter_def["label"],
+                    "value": selected,
+                    "options": options,
+                }
+            )
+
+        sort_lookup = {option["value"]: option for option in sort_options}
+        selected_sort = query_args.get(sort_param, default_sort).strip() or default_sort
+        if selected_sort not in sort_lookup:
+            selected_sort = default_sort
+        sort_choice = sort_lookup.get(selected_sort)
+        if sort_choice and selected_sort != default_sort:
+            filtered_rows = sorted(
+                filtered_rows,
+                key=lambda row: normalize_sort_value(sort_choice["key"](row), self.query_text_fn),
+                reverse=bool(sort_choice.get("reverse")),
+            )
+
+        persist_params = []
+        for key in query_args.keys():
+            if key in used_params:
+                continue
+            for value in query_args.getlist(key):
+                if value != "":
+                    persist_params.append((key, value))
+
+        has_active_filters = bool(search_value) or any(item["value"] for item in toolbar_filters) or selected_sort != default_sort
+        toolbar = {
+            "action": request_path,
+            "search_param": search_param,
+            "search_value": search_value,
+            "search_placeholder": search_placeholder,
+            "filters": toolbar_filters,
+            "sort_param": sort_param,
+            "sort_value": selected_sort,
+            "sort_options": normalize_toolbar_options(
+                [{"value": option["value"], "label": option["label"]} for option in sort_options]
+            ),
+            "persist_params": persist_params,
+            "reset_url": build_reset_url(request_path, persist_params, self.urlencode_fn),
+            "has_active_filters": has_active_filters,
+            "result_count": len(filtered_rows),
+            "total_count": len(rows),
+        }
+        return filtered_rows, toolbar
+
+
 def apply_collection_filters(
     rows,
     *,
@@ -218,89 +330,14 @@ def apply_collection_filters(
     search_placeholder="Search",
     param_prefix="",
 ):
-    rows = list(rows)
-    filters = filters or []
-    sort_options = sort_options or []
-    search_param = f"{param_prefix}q"
-    sort_param = f"{param_prefix}sort"
-    used_params = {search_param, sort_param}
-    search_value = query_args.get(search_param, "").strip()
-
-    filtered_rows = rows
-    if search_value:
-        filtered_rows = [row for row in filtered_rows if matches_search_query(row, search_value, search_fields, query_text_fn)]
-
-    toolbar_filters = []
-    for filter_def in filters:
-        param = f"{param_prefix}{filter_def['name']}"
-        used_params.add(param)
-        selected = query_args.get(param, "").strip()
-        options = filter_def.get("options")
-        if callable(options):
-            options = options(rows)
-        elif options is None:
-            options = filter_option_rows(rows, filter_def["field"], query_text_fn)
-        options = normalize_toolbar_options(options)
-
-        if selected:
-            if "predicate" in filter_def:
-                filtered_rows = [row for row in filtered_rows if filter_def["predicate"](row, selected)]
-            else:
-                match_type = filter_def.get("match", "exact")
-                filtered_rows = [
-                    row for row in filtered_rows
-                    if (
-                        query_text_fn(selected) in query_text_fn(row_value(row, filter_def["field"]))
-                        if match_type == "contains"
-                        else query_text_fn(row_value(row, filter_def["field"])) == query_text_fn(selected)
-                    )
-                ]
-
-        toolbar_filters.append(
-            {
-                "name": param,
-                "label": filter_def["label"],
-                "value": selected,
-                "options": options,
-            }
-        )
-
-    sort_lookup = {option["value"]: option for option in sort_options}
-    selected_sort = query_args.get(sort_param, default_sort).strip() or default_sort
-    if selected_sort not in sort_lookup:
-        selected_sort = default_sort
-    sort_choice = sort_lookup.get(selected_sort)
-    if sort_choice and selected_sort != default_sort:
-        filtered_rows = sorted(
-            filtered_rows,
-            key=lambda row: normalize_sort_value(sort_choice["key"](row), query_text_fn),
-            reverse=bool(sort_choice.get("reverse")),
-        )
-
-    persist_params = []
-    for key in query_args.keys():
-        if key in used_params:
-            continue
-        for value in query_args.getlist(key):
-            if value != "":
-                persist_params.append((key, value))
-
-    has_active_filters = bool(search_value) or any(item["value"] for item in toolbar_filters) or selected_sort != default_sort
-    toolbar = {
-        "action": request_path,
-        "search_param": search_param,
-        "search_value": search_value,
-        "search_placeholder": search_placeholder,
-        "filters": toolbar_filters,
-        "sort_param": sort_param,
-        "sort_value": selected_sort,
-        "sort_options": normalize_toolbar_options(
-            [{"value": option["value"], "label": option["label"]} for option in sort_options]
-        ),
-        "persist_params": persist_params,
-        "reset_url": build_reset_url(request_path, persist_params, urlencode_fn),
-        "has_active_filters": has_active_filters,
-        "result_count": len(filtered_rows),
-        "total_count": len(rows),
-    }
-    return filtered_rows, toolbar
+    coordinator = CollectionFilterCoordinator(rows, query_text_fn, urlencode_fn)
+    return coordinator.apply(
+        query_args=query_args,
+        request_path=request_path,
+        search_fields=search_fields,
+        filters=filters,
+        sort_options=sort_options,
+        default_sort=default_sort,
+        search_placeholder=search_placeholder,
+        param_prefix=param_prefix,
+    )
