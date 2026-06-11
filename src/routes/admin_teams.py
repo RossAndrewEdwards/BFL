@@ -1,5 +1,5 @@
-import team_support
-from exceptions import ValidationError
+from src.support import team as team_support
+from src.exceptions import ValidationError
 
 
 def register_admin_team_routes(app, deps):

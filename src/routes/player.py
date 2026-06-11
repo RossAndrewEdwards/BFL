@@ -2,7 +2,7 @@ import json
 
 
 def register_player_routes(app, deps):
-    from fighter_request_support import FighterRequestEngine
+    from src.support.fighter_request import FighterRequestEngine
     ValidationError = deps["ValidationError"]
     admin_home_endpoint = deps["admin_home_endpoint"]
     admin_team_new_endpoint = deps["admin_team_new_endpoint"]

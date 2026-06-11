@@ -220,8 +220,44 @@ class BuhurtCalendarClient:
 
 
 # =====================================================================
-# Legacy Compatibility Wrappers & Helpers
+# Legacy Compatibility Wrappers & Helpers & Coordinator
 # =====================================================================
+
+class BuhurtCalendarCoordinator:
+    """
+    Coordinator class to centralize buhurt UK calendar operations,
+    including cache persistence, web scraping, and banner sync.
+    """
+    def __init__(
+        self,
+        conn,
+        cache_key: str = "buhurt_uk_calendar_cache",
+        cache_hours: int = 12,
+        events_url: str = "https://example.com/buhurt-calendar",
+        fallback_events: Optional[List[Dict[str, Any]]] = None,
+    ):
+        self.conn = conn
+        self.client = BuhurtCalendarClient(
+            cache_key=cache_key,
+            cache_hours=cache_hours,
+            events_url=events_url,
+            fallback_events=fallback_events,
+        )
+
+    def get_calendar_events(self, is_testing: bool = False) -> List[BuhurtEvent]:
+        return self.client.get_calendar_events(self.conn, is_testing=is_testing)
+
+    def get_upcoming_tournaments(self, limit: int = 6, is_testing: bool = False) -> List[BuhurtEvent]:
+        return self.client.get_upcoming_tournaments(self.conn, limit=limit, is_testing=is_testing)
+
+    def sync_banners(self, events: Optional[List[Any]] = None, is_testing: bool = False) -> int:
+        if events is None:
+            events = self.client.get_calendar_events(self.conn, is_testing=is_testing)
+        else:
+            events = [BuhurtEvent(**e) if isinstance(e, dict) else e for e in events]
+        active_leagues = self.conn.execute("SELECT id FROM leagues WHERE status='active'").fetchall()
+        return self.client.sync_banners(self.conn, events, active_leagues=active_leagues)
+
 
 def parse_event_date_range(raw_date, *, os_name=None):
     if os_name is None:
@@ -263,7 +299,7 @@ def fetch_buhurt_uk_tournaments(
 
 def fallback_buhurt_uk_tournaments(fallback_events=None, parse_event_date_range_fn=None):
     if fallback_events is None:
-        from app import FALLBACK_BUHURT_UK_TOURNAMENTS
+        from src.app import FALLBACK_BUHURT_UK_TOURNAMENTS
         fallback_events = FALLBACK_BUHURT_UK_TOURNAMENTS
     client = BuhurtCalendarClient(fallback_events=fallback_events)
     return client._load_fallback_events()
@@ -309,8 +345,8 @@ def calendar_buhurt_uk_tournaments(
     save_tournament_cache_fn=None,
     handled_errors=None,
 ):
-    client = BuhurtCalendarClient(cache_key=cache_key, cache_hours=cache_hours)
-    events = client.get_calendar_events(conn, is_testing=app_testing)
+    coordinator = BuhurtCalendarCoordinator(conn, cache_key=cache_key, cache_hours=cache_hours)
+    events = coordinator.get_calendar_events(is_testing=app_testing)
     return [asdict(e) for e in events]
 
 
@@ -320,12 +356,12 @@ def upcoming_buhurt_uk_tournaments(
     calendar_buhurt_uk_tournaments_fn=None,
     limit=6,
 ):
-    client = BuhurtCalendarClient()
-    events = client.get_upcoming_tournaments(conn, limit=limit)
+    coordinator = BuhurtCalendarCoordinator(conn)
+    events = coordinator.get_upcoming_tournaments(limit=limit)
     return [asdict(e) for e in events]
 
 
 def sync_calendar_event_banners(conn, calendar_events, *, active_leagues):
-    client = BuhurtCalendarClient()
+    coordinator = BuhurtCalendarCoordinator(conn)
     events = [BuhurtEvent(**e) for e in calendar_events]
-    return client.sync_banners(conn, events, active_leagues)
+    return coordinator.client.sync_banners(conn, events, active_leagues)

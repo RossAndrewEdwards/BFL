@@ -155,7 +155,7 @@ class JournalNamespace:
         )
 
     def rollback(self, audit_id: int, actor_user_id: Optional[int] = None) -> None:
-        from exceptions import ValidationError
+        from src.exceptions import ValidationError
         row = self._conn.execute("SELECT * FROM audit_logs WHERE id=?", (audit_id,)).fetchone()
         if not row:
             raise ValidationError("Audit log entry not found.")
@@ -260,7 +260,7 @@ class AlertsNamespace:
         return notification_id
 
     def toggle(self, notification_id: int) -> bool:
-        from exceptions import ValidationError
+        from src.exceptions import ValidationError
         row = self._conn.execute("SELECT is_active, title, league_id FROM notifications WHERE id=?", (notification_id,)).fetchone()
         if not row:
             raise ValidationError("Notification not found.")
@@ -308,7 +308,7 @@ class TokensNamespace:
         return token
 
     def resolve_share(self, token: str) -> int:
-        from exceptions import ValidationError
+        from src.exceptions import ValidationError
         row = self._conn.execute("SELECT team_id FROM team_share_links WHERE token=?", (token,)).fetchone()
         if not row:
             raise ValidationError("Invalid share token.")
@@ -363,7 +363,7 @@ class TokensNamespace:
         return dict(row) if row else None
 
     def resolve_claim_code(self, code: str) -> Dict[str, Any]:
-        from exceptions import ValidationError
+        from src.exceptions import ValidationError
         row = self._conn.execute(
             """
             SELECT *
@@ -377,7 +377,7 @@ class TokensNamespace:
         return dict(row)
 
     def execute_claim(self, token: str, display_name: str, password_raw: str) -> int:
-        from exceptions import ValidationError
+        from src.exceptions import ValidationError
         row = self._conn.execute(
             """
             SELECT *
@@ -431,12 +431,12 @@ def get_ops_engine(conn):
 
 
 def get_effective_league_id(conn):
-    from auth_support import LeagueScopeManager
+    from src.support.auth import LeagueScopeManager
     return LeagueScopeManager(conn).effective_league_id
 
 
 def get_scoped_league_id(conn):
-    from auth_support import LeagueScopeManager
+    from src.support.auth import LeagueScopeManager
     return LeagueScopeManager(conn).scoped_league_id
 
 

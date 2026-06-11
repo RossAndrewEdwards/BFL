@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 def get_db_conn():
-    from app import db
+    from src.app import db
     return db()
 
 
@@ -121,7 +121,7 @@ class LeagueScopeManager:
 
     @property
     def default_league_id(self) -> Optional[int]:
-        from app import DEFAULT_LEAGUE_SLUG
+        from src.app import DEFAULT_LEAGUE_SLUG
         row = self._conn.execute("SELECT id FROM leagues WHERE slug=?", (DEFAULT_LEAGUE_SLUG,)).fetchone()
         return row["id"] if row else None
 
@@ -145,7 +145,7 @@ class LeagueScopeManager:
             league = self._conn.execute("SELECT * FROM leagues WHERE id=?", (league_id,)).fetchone()
             if league:
                 return league
-        from app import DEFAULT_LEAGUE_SLUG
+        from src.app import DEFAULT_LEAGUE_SLUG
         return self._conn.execute("SELECT * FROM leagues WHERE slug=?", (DEFAULT_LEAGUE_SLUG,)).fetchone()
 
     def to_dict(self) -> Dict[str, Any]:

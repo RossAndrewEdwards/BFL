@@ -1,8 +1,8 @@
 import datetime
 from typing import List, Dict, Any, Tuple
-from exceptions import ValidationError
-from ops_support import log_audit, event_result_audit_state
-from season_support import require_active_season_editable
+from src.exceptions import ValidationError
+from src.support.ops import log_audit, event_result_audit_state
+from src.support.season import require_active_season_editable
 
 
 class EventScoringCoordinator:

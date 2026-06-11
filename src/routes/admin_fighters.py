@@ -7,8 +7,8 @@ from flask import Response
 
 
 def register_admin_fighter_routes(app, deps):
-    from training_support import TrainingHonoursEngine
-    from fighter_request_support import FighterRequestEngine
+    from src.support.training import TrainingHonoursEngine
+    from src.support.fighter_request import FighterRequestEngine
     admin_required = deps["admin_required"]
     db = deps["db"]
     leaderboard_rows = deps["leaderboard_rows"]

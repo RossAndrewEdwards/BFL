@@ -6,11 +6,11 @@ from pathlib import Path
 from typing import List, Optional, BinaryIO, Protocol, Dict, Any
 from dataclasses import dataclass, field
 
-from exceptions import ValidationError
-from player_support import player_rows, parse_int_field_from_value
+from src.exceptions import ValidationError
+from src.support.player import player_rows, parse_int_field_from_value
 
 ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 TEAM_UPLOAD_DIR = BASE_DIR / "static" / "uploads" / "teams"
 TEAM_UPLOAD_STATIC_PREFIX = "uploads/teams"
 
@@ -87,7 +87,7 @@ class SqliteTeamDatabaseAdapter(TeamDatabasePort):
         self.conn = conn
 
     def check_season_editable(self, league_id: int) -> None:
-        from season_support import require_active_season_editable
+        from src.support.season import require_active_season_editable
         require_active_season_editable(self.conn, "Team changes")
 
     def is_name_unique(self, name: str, league_id: int, exclude_team_id: Optional[int]) -> bool:
@@ -128,7 +128,7 @@ class SqliteTeamDatabaseAdapter(TeamDatabasePort):
         return player_manager_slot_usage(self.conn, player_user_id, exclude_team_id)
 
     def get_league_quota_summary(self, league_id: int) -> Dict[str, Any]:
-        from quota_support import league_quota_summary
+        from src.support.quota import league_quota_summary
         return league_quota_summary(self.conn, league_id)
 
     def get_league_settings(self, league_id: int) -> Dict[str, Any]:
@@ -176,7 +176,7 @@ class SqliteTeamDatabaseAdapter(TeamDatabasePort):
 
     def save_team_transaction(self, team_id: Optional[int], league_id: int, details: TeamDetails, fighter_ids: List[int]) -> int:
         if team_id is None:
-            from quota_support import require_team_capacity
+            from src.support.quota import require_team_capacity
             require_team_capacity(self.conn, league_id)
             
             cur = self.conn.execute(
@@ -215,11 +215,11 @@ class SqliteTeamDatabaseAdapter(TeamDatabasePort):
         self.conn.execute("DELETE FROM fantasy_teams WHERE id=?", (team_id,))
 
     def log_audit(self, action: str, entity_id: int, message: str, before_state: Optional[Dict[str, Any]], after_state: Optional[Dict[str, Any]], rollback_type: Optional[str] = None) -> None:
-        from ops_support import log_audit
+        from src.support.ops import log_audit
         log_audit(self.conn, "team", entity_id, action, message, before_state=before_state, after_state=after_state, rollback_type=rollback_type)
 
     def create_notification(self, title: str, body: str, kind: str) -> None:
-        from ops_support import create_notification
+        from src.support.ops import create_notification
         create_notification(self.conn, title, body, kind)
 
     def commit(self) -> None:
@@ -301,7 +301,7 @@ class TeamManager:
         before_state = None
         old_image_path = None
         if team_id is not None:
-            from ops_support import team_state
+            from src.support.ops import team_state
             before_state = team_state(self.db.conn, team_id)
             if before_state:
                 old_image_path = before_state["team"].get("image_path")
@@ -334,7 +334,7 @@ class TeamManager:
                     pass
             raise exc
 
-        from ops_support import team_state
+        from src.support.ops import team_state
         after_state = team_state(self.db.conn, saved_team_id)
 
         if team_id is None:
@@ -358,7 +358,7 @@ class TeamManager:
         # Check active season status (raises ValidationError directly)
         self.db.check_season_editable(details.league_id)
 
-        from ops_support import team_state
+        from src.support.ops import team_state
         before_state = team_state(self.db.conn, team_id)
         if not before_state:
             raise ValidationError("Team does not exist.")
@@ -415,7 +415,7 @@ def resolve_target_league_id(conn, team_id, player_user_id):
     if player_user_id is None:
         if target_league_id is not None:
             return target_league_id
-        from ops_support import get_effective_league_id
+        from src.support.ops import get_effective_league_id
         return get_effective_league_id(conn)
     player = player_record(conn, player_user_id)
     if not player:
@@ -441,7 +441,7 @@ def validate_team_fighters(conn, fighter_ids, target_league_id):
 
 
 def player_manager_slot_usage(conn, user_id, exclude_team_id=None):
-    from ops_support import get_scoped_league_id
+    from src.support.ops import get_scoped_league_id
     league_id = get_scoped_league_id(conn)
     player = conn.execute(
         """
@@ -480,7 +480,7 @@ def player_manager_slot_usage(conn, user_id, exclude_team_id=None):
 
 def team_builder_context(conn):
     settings = settings_dict(conn)
-    from app import leaderboard_rows
+    from src.app import leaderboard_rows
     fighters = leaderboard_rows(conn)
     return {
         "fighters": fighters,

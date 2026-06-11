@@ -1,10 +1,10 @@
 import json
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Tuple
-from exceptions import ValidationError
-from scoring_support import calculate_season_cost_changes, season_cost_settings_from_settings
-from ops_support import log_audit, create_notification
-from ui_support import query_text
+from src.exceptions import ValidationError
+from src.support.scoring import calculate_season_cost_changes, season_cost_settings_from_settings
+from src.support.ops import log_audit, create_notification
+from src.support.ui import query_text
 
 
 def now_iso():
@@ -210,7 +210,7 @@ class SeasonLifecycleEngine:
             raise ValidationError(f"{season['name']} has already been ended.")
 
         season_id = season["id"]
-        from app import team_rows, leaderboard_rows
+        from src.app import team_rows, leaderboard_rows
         teams = [row for row in team_rows(self._conn)]
         fighters = [row for row in leaderboard_rows(self._conn)]
         winner = next((team for team in teams if team["rank"] == 1), None)

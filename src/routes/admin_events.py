@@ -37,7 +37,7 @@ WORKSPACE_STAT_SHORT_LABELS = {
 
 
 def register_admin_event_routes(app, deps):
-    from event_scoring_support import EventScoringCoordinator
+    from src.support.event_scoring import EventScoringCoordinator
     admin_required = deps["admin_required"]
     db = deps["db"]
     abort = deps["abort"]
