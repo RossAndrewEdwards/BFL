@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 {% from "_tier_helpers.html" import render_tier_legend %}
 {% block content %}
+<style>
+  @media (min-width: 1025px) {
+    /* Allow the page container to go wider for the three-column dashboard layout */
+    .container {
+      max-width: 1600px !important;
+      width: 95% !important;
+    }
+    .builder-layout {
+      display: block !important;
+      width: 100% !important;
+    }
+  }
+</style>
 <section class="hero">
   <div class="hero-grid">
     <div class="hero-copy">
@@ -19,7 +32,7 @@
 </section>
 
 <section class="builder-layout" style="margin-top: 24px;">
-  <form method="post" class="panel roster-builder-form" id="team-builder-form" enctype="multipart/form-data">
+  <form method="post" class="panel roster-builder-form" id="team-builder-form" enctype="multipart/form-data" style="width: 100%;">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
     <div class="wizard-stepper" aria-label="Team builder steps">
       <div class="wizard-step is-active" data-step-indicator="1">
@@ -38,6 +51,7 @@
       </div>
     </div>
 
+    <!-- Step 1 Panel -->
     <section class="wizard-panel is-active" data-wizard-step="1">
       <div class="section-head">
         <div>
@@ -46,14 +60,14 @@
         </div>
       </div>
       <div class="form-grid two-col">
-        <label>Team Name <input name="team_name" value="{{ team.team_name if team else '' }}" required data-step-one-required></label>
-        <label>Manager <input name="manager" value="{{ team.manager if team else '' }}" required data-step-one-required></label>
+        <label>Team Name <input name="team_name" type="text" class="builder-text-input" value="{{ team.team_name if team else '' }}" required data-step-one-required></label>
+        <label>Manager <input name="manager" id="manager-input" type="text" class="builder-text-input" value="{{ team.manager if team else '' }}" required readonly data-step-one-required style="opacity: 0.6; cursor: not-allowed;"></label>
         {% if show_player_select is not defined or show_player_select %}
         <label>Player
-          <select name="player_user_id">
-            <option value="">Unassigned player</option>
+          <select name="player_user_id" id="player-user-select" class="builder-text-input">
+            <option value="" data-display-name="">Unassigned player</option>
             {% for player in players %}
-            <option value="{{ player.id }}" {{ 'selected' if team and team.player_user_id == player.id else '' }}>
+            <option value="{{ player.id }}" data-display-name="{{ player.display_name }}" {{ 'selected' if team and team.player_user_id == player.id else '' }}>
               {{ player.display_name }}{% if player.managed_team_count %} (Has team){% else %} (No team yet){% endif %}
             </option>
             {% endfor %}
@@ -71,10 +85,10 @@
           <span class="hint">Optional. JPG, PNG, GIF, or WebP up to 4MB.</span>
         </label>
         <label>Image Credit
-          <input name="image_credit" value="{{ team.image_credit if team and team.image_credit else '' }}" placeholder="Artist or photographer">
+          <input name="image_credit" type="text" class="builder-text-input" value="{{ team.image_credit if team and team.image_credit else '' }}" placeholder="Artist or photographer">
         </label>
         <label>Image Source URL
-          <input name="image_source_url" value="{{ team.image_source_url if team and team.image_source_url else '' }}" placeholder="https://...">
+          <input name="image_source_url" type="text" class="builder-text-input" value="{{ team.image_source_url if team and team.image_source_url else '' }}" placeholder="https://...">
         </label>
       </div>
       <div class="builder-actions wizard-actions">
@@ -82,108 +96,155 @@
       </div>
     </section>
 
+    <!-- Step 2 Panel -->
     <section class="wizard-panel" data-wizard-step="2" hidden>
+      <div class="builder-grid-3col">
+        
+        <!-- Left Column (Sticky Live Summary) -->
+        <div class="sticky-col-left">
+          <div class="panel" style="padding: 20px; background: rgba(24, 24, 27, 0.4); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; margin-bottom: 0;">
+            <h2 style="font-size: 1.15rem; font-weight: bold; margin-bottom: 12px; color: #fff;">Live Team Summary</h2>
+            <div class="stats-grid compact-stats" style="grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px;">
+              <div><span>Selected</span><strong id="summary-count">0</strong></div>
+              <div><span>Total Cost</span><strong id="summary-cost">0</strong></div>
+              <div><span>Remaining</span><strong id="summary-remaining">{{ team_budget }}</strong></div>
+              <div><span>Status</span><strong id="summary-status">Building</strong></div>
+            </div>
 
-      <div class="section-head">
-        <div>
-          <h2>Step 2 · Choose Fighters</h2>
-          <p>Filter the card pool, then drag a fighter into your roster or use the add button on touch devices.</p>
-        </div>
-      </div>
+            <div style="margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+              <div class="flex justify-between text-xs font-semibold text-zinc-400 mb-1" style="display: flex; justify-content: space-between; margin-top: 4px;">
+                <span>Budget Capacity</span>
+                <span id="budget-percentage-label">0% Used</span>
+              </div>
+              <div class="budget-progress-track">
+                <div class="budget-progress-bar" id="budget-progress-bar" style="--budget-pct: 0%;"></div>
+              </div>
+            </div>
 
-      <section class="panel builder-filter-panel">
-        <div class="builder-filter-grid">
-          <label>
-            <span>Search</span>
-            <input type="search" id="fighter-search" placeholder="Search fighter name">
-          </label>
-          <label>
-            <span>Tier</span>
-            <select id="fighter-tier-filter">
-              <option value="">All tiers</option>
-              {% for tier in fighters|map(attribute='tier')|unique|list %}
-              <option value="{{ tier }}">{{ tier }}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <label>
-            <span>Min cost</span>
-            <input type="number" id="fighter-cost-min" min="0" placeholder="0">
-          </label>
-          <label>
-            <span>Max cost</span>
-            <input type="number" id="fighter-cost-max" min="0" placeholder="{{ team_budget }}">
-          </label>
-          <label>
-            <span>Status</span>
-            <select id="fighter-status-filter">
-              <option value="">All statuses</option>
-              <option value="available">Available</option>
-              <option value="selected">Selected</option>
-              <option value="unavailable">Unavailable</option>
-            </select>
-          </label>
-        </div>
-        <div class="table-toolbar-actions" style="margin-top: 16px;">
-          <p class="meta" id="fighter-pool-count">Showing 0 fighters</p>
-          <div class="hero-actions">
-            <button type="button" class="button secondary" id="reset-fighter-filters">Clear Filters</button>
+            <div style="margin-top: 14px;">
+              <p class="meta" id="summary-message" style="font-size: 0.8rem; margin: 0; color: #a1a1aa;">Choose fighters to start building a valid roster.</p>
+              <p class="meta" id="selection-guidance" style="font-size: 0.8rem; margin: 6px 0 0; color: #71717a;">Tap a roster slot to activate it, then select a fighter card.</p>
+              <div class="builder-live-feedback" id="builder-live-feedback" aria-live="polite" style="margin-top: 10px; font-size: 0.85rem; padding: 6px 10px; border-radius: 8px;">No roster changes yet.</div>
+              <div class="builder-warning-list" id="builder-warning-list" style="margin-top: 10px;"></div>
+            </div>
           </div>
         </div>
-      </section>
 
-      {{ render_tier_legend() }}
-
-      <section class="builder-pool-grid" id="available-fighter-grid" aria-live="polite"></section>
-
-      <div class="section-head">
+        <!-- Center Column (Scrolling Filters, Pool & Roster) -->
         <div>
-          <h2>Team Roster</h2>
-          <p>Drop fighters into open slots or tap add to build the final submission order.</p>
+          <div class="section-head">
+            <div>
+              <h2>Step 2 · Choose Fighters</h2>
+              <p>Filter the card pool, then click a slot to activate it and tap a fighter to place them directly.</p>
+            </div>
+          </div>
+
+          <section class="panel builder-filter-panel">
+            <div class="builder-filter-grid">
+              <label>
+                <span>Search</span>
+                <input type="search" id="fighter-search" class="builder-text-input" placeholder="Search fighter name">
+              </label>
+              <select id="fighter-tier-filter" style="display: none;"></select>
+              <select id="fighter-status-filter" style="display: none;"></select>
+              
+              <div>
+                <span class="text-sm font-semibold text-zinc-600 dark:text-zinc-400 block mb-1">Tier</span>
+                <div class="pool-filter-pills" id="tier-filter-pills">
+                  <label class="pool-filter-pill">
+                    <input type="radio" name="fighter-tier-pill" value="" checked>
+                    <div class="pool-filter-pill-inner">All Tiers</div>
+                  </label>
+                  {% for tier in fighters|map(attribute='tier')|unique|list %}
+                  <label class="pool-filter-pill">
+                    <input type="radio" name="fighter-tier-pill" value="{{ tier }}">
+                    <div class="pool-filter-pill-inner">{{ tier }}</div>
+                  </label>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <label>
+                <span>Min cost</span>
+                <input type="number" id="fighter-cost-min" class="builder-text-input" min="0" placeholder="0">
+              </label>
+              <label>
+                <span>Max cost</span>
+                <input type="number" id="fighter-cost-max" class="builder-text-input" min="0" placeholder="{{ team_budget }}">
+              </label>
+
+              <div>
+                <span class="text-sm font-semibold text-zinc-600 dark:text-zinc-400 block mb-1">Status</span>
+                <div class="pool-filter-pills" id="status-filter-pills">
+                  <label class="pool-filter-pill">
+                    <input type="radio" name="fighter-status-pill" value="" checked>
+                    <div class="pool-filter-pill-inner">All</div>
+                  </label>
+                  <label class="pool-filter-pill">
+                    <input type="radio" name="fighter-status-pill" value="available">
+                    <div class="pool-filter-pill-inner">Available</div>
+                  </label>
+                  <label class="pool-filter-pill">
+                    <input type="radio" name="fighter-status-pill" value="selected">
+                    <div class="pool-filter-pill-inner">Selected</div>
+                  </label>
+                  <label class="pool-filter-pill">
+                    <input type="radio" name="fighter-status-pill" value="unavailable">
+                    <div class="pool-filter-pill-inner">Unavailable</div>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="table-toolbar-actions" style="margin-top: 16px;">
+              <p class="meta" id="fighter-pool-count">Showing 0 fighters</p>
+              <div class="hero-actions">
+                <button type="button" class="button secondary" id="reset-fighter-filters">Clear Filters</button>
+              </div>
+            </div>
+          </section>
+
+          {{ render_tier_legend() }}
+
+          <section class="builder-pool-grid" id="available-fighter-grid" aria-live="polite"></section>
+
+          <div class="section-head" style="margin-top: 24px;">
+            <div>
+              <h2>Team Roster</h2>
+              <p>Tap any slot to select it, then tap an available fighter to place them. Drag-and-drop is also supported on desktop.</p>
+            </div>
+          </div>
+
+          <div class="builder-roster-grid" id="team-roster-grid" aria-live="polite"></div>
+          <div id="hidden-fighter-inputs">
+            {% for slot in range(maximum_team_size) %}
+            <input type="hidden" name="fighter_ids" value="{{ selected[slot] if selected|length > slot else '' }}" data-roster-slot="{{ slot + 1 }}">
+            {% endfor %}
+          </div>
+
+          <div class="builder-actions wizard-actions">
+            <button type="button" class="button secondary" id="wizard-back-button">Back to Team Details</button>
+            <button type="submit" id="save-team-button">Save Team</button>
+          </div>
         </div>
-      </div>
 
-      <div class="builder-roster-grid" id="team-roster-grid" aria-live="polite"></div>
-      <div id="hidden-fighter-inputs">
-        {% for slot in range(maximum_team_size) %}
-        <input type="hidden" name="fighter_ids" value="{{ selected[slot] if selected|length > slot else '' }}" data-roster-slot="{{ slot + 1 }}">
-        {% endfor %}
-      </div>
+        <!-- Right Column (Sticky Selected Fighters compare) -->
+        <div class="sticky-col-right">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <h2 style="font-size: 1.15rem; font-weight: bold; color: #fff; margin: 0;">Selected Fighter Windows</h2>
+                <p class="meta" style="margin: 2px 0 0; font-size: 0.8rem; color: #a1a1aa;">Compare stats side-by-side.</p>
+              </div>
+            </div>
+            {{ render_tier_legend() }}
+            <section id="selected-fighter-grid" style="display: flex; flex-direction: column; gap: 16px; width: 100%;" aria-live="polite"></section>
+          </div>
+        </div>
 
-      <div class="builder-actions wizard-actions">
-        <button type="button" class="button secondary" id="wizard-back-button">Back to Team Details</button>
-        <button type="submit" id="save-team-button">Save Team</button>
       </div>
     </section>
   </form>
-
-  <aside class="builder-sidebar">
-    <article class="detail-card dark">
-      <h2>Live Team Summary</h2>
-      <div class="stats-grid compact-stats">
-        <div><span>Selected</span><strong id="summary-count">0</strong></div>
-        <div><span>Total Cost</span><strong id="summary-cost">0</strong></div>
-        <div><span>Remaining</span><strong id="summary-remaining">{{ team_budget }}</strong></div>
-        <div><span>Status</span><strong id="summary-status">Building</strong></div>
-      </div>
-      <p class="meta" id="summary-message" style="margin-top: 18px;">Choose fighters to start building a valid roster.</p>
-      <p class="meta" id="selection-guidance" style="margin-top: 10px;">Drag fighters into the roster or use the add button below each card.</p>
-      <div class="builder-live-feedback" id="builder-live-feedback" aria-live="polite">No roster changes yet.</div>
-      <div class="builder-warning-list" id="builder-warning-list"></div>
-    </article>
-  </aside>
 </section>
-
-<div class="section-head">
-  <div>
-    <h2>Selected Fighter Windows</h2>
-    <p>Every selected fighter appears here so managers can compare form, output, and style inside the same team build.</p>
-  </div>
-</div>
-
-{{ render_tier_legend() }}
-
-<section class="builder-compare-grid" id="selected-fighter-grid" aria-live="polite"></section>
 {% endblock %}
 
 {% block scripts %}
@@ -351,30 +412,43 @@
         renderEmptyState();
         return;
       }
-      selectedGrid.innerHTML = selections.map(({ fighter, slot }) => `
-        <article class="fighter-window ${escapeHtml(fighter.tier_theme.class_name)}">
-          <div class="fighter-window-topline">
-            <span class="pill brand">Slot ${slot}</span>
-            <span class="tier-badge ${escapeHtml(fighter.tier_theme.class_name)}">${escapeHtml(fighter.tier || fighter.tier_theme.label)}</span>
-            <span class="pill">Cost ${fighter.cost_used}</span>
-          </div>
-          <h3>${escapeHtml(fighter.name)}</h3>
-          <p class="meta">${escapeHtml(fighter.nickname || fighter.preferred_role || fighter.fighting_style || 'Profile details to be updated.')}</p>
-          ${fighter.hero_quote ? `<blockquote class="fighter-quote">"${escapeHtml(fighter.hero_quote)}"</blockquote>` : ''}
-          <div class="split-stats">
-            <div class="mini-stat"><span>Points</span><strong>${fighter.total_points}</strong></div>
-            <div class="mini-stat"><span>Kills</span><strong>${fighter.kills}</strong></div>
-            <div class="mini-stat"><span>K/D</span><strong>${formatRatio(fighter.kd_ratio)}</strong></div>
-            <div class="mini-stat"><span>Competitions</span><strong>${fighter.competitions}</strong></div>
-          </div>
-          <div class="pill-row">
-            <span class="pill">Gold ${fighter.gold_medals}</span>
-            <span class="pill">Support ${fighter.support}</span>
-            <span class="pill">Training ${fighter.training}</span>
-          </div>
-          <p class="fighter-window-copy">${escapeHtml(fighter.bio || fighter.notes || 'Scouting notes will appear here as profiles are filled out.')}</p>
-        </article>
-      `).join('');
+      selectedGrid.innerHTML = selections.map(({ fighter, slot }) => {
+        let glowClass = '';
+        if (fighter.tier === 'S' || fighter.tier_theme.label === 'S') glowClass = 'tier-s-glow';
+        else if (fighter.tier === 'A' || fighter.tier_theme.label === 'A') glowClass = 'tier-a-glow';
+        else if (fighter.tier === 'B' || fighter.tier_theme.label === 'B') glowClass = 'tier-b-glow';
+
+        return `
+          <article class="fighter-chip fighter-card-shell builder-fighter-card ${glowClass} ${escapeHtml(fighter.tier_theme.class_name)}" style="width: 100%;">
+            <img class="fighter-card-image" src="${escapeHtml(fighter.image_url || {{ default_skins.fighter.url|tojson }})}" alt="${escapeHtml(fighter.name)} profile image">
+            <div class="ranking-meta-line">
+              <span class="pill brand">Slot ${slot}</span>
+              <span class="tier-badge ${escapeHtml(fighter.tier_theme.class_name)}">${escapeHtml(fighter.tier || fighter.tier_theme.label)}</span>
+              <span class="pill">Cost ${fighter.cost_used}</span>
+            </div>
+            <h3>${escapeHtml(fighter.name)}</h3>
+            <p class="meta">${escapeHtml(fighter.nickname || fighter.preferred_role || fighter.fighting_style || 'Profile details to be updated.')}</p>
+            ${fighter.hero_quote ? `<blockquote class="fighter-quote">"${escapeHtml(fighter.hero_quote)}"</blockquote>` : ''}
+            <div class="split-stats">
+              <div class="mini-stat"><span>Points</span><strong>${fighter.total_points}</strong></div>
+              <div class="mini-stat"><span>Kills</span><strong>${fighter.kills}</strong></div>
+              <div class="mini-stat"><span>K/D</span><strong>${formatRatio(fighter.kd_ratio)}</strong></div>
+              <div class="mini-stat"><span>Competitions</span><strong>${fighter.competitions}</strong></div>
+            </div>
+            <div class="pill-row">
+              <span class="pill">Gold ${fighter.gold_medals}</span>
+              <span class="pill">Support ${fighter.support}</span>
+              <span class="pill">Training ${fighter.training}</span>
+            </div>
+            <p class="fighter-window-copy">${escapeHtml(fighter.bio || fighter.notes || 'Scouting notes will appear here as profiles are filled out.')}</p>
+            <div class="builder-card-actions">
+              <button type="button" class="button secondary" style="width: 100%;" data-action="remove-selected" data-slot-index="${slot - 1}">
+                Remove from Slot ${slot}
+              </button>
+            </div>
+          </article>
+        `;
+      }).join('');
     }
 
     function renderSummary(summary) {
@@ -563,6 +637,23 @@
       refreshBuilder();
     }
 
+    function clearFilters() {
+      searchInput.value = '';
+      
+      const tierAll = document.querySelector('input[name="fighter-tier-pill"][value=""]');
+      if (tierAll) tierAll.checked = true;
+      tierFilter.value = '';
+
+      const statusAll = document.querySelector('input[name="fighter-status-pill"][value=""]');
+      if (statusAll) statusAll.checked = true;
+      statusFilter.value = '';
+
+      costMinInput.value = '';
+      costMaxInput.value = '';
+      lastRosterAction = 'Filters cleared. Showing the full fighter pool again.';
+      refreshBuilder();
+    }
+
     function handleDropOnSlot(targetIndex) {
       if (!dragPayload) return;
       if (dragPayload.source === 'pool') {
@@ -576,6 +667,17 @@
       }
       dragPayload = null;
       refreshBuilder();
+    }
+
+    // Player select and manager name synchronization
+    const playerSelect = document.getElementById('player-user-select');
+    const managerInput = document.getElementById('manager-input');
+    if (playerSelect && managerInput) {
+      playerSelect.addEventListener('change', () => {
+        const selectedOption = playerSelect.options[playerSelect.selectedIndex];
+        const displayName = selectedOption.getAttribute('data-display-name');
+        managerInput.value = displayName || '';
+      });
     }
 
     availableGrid.addEventListener('click', (event) => {
@@ -592,9 +694,42 @@
       refreshBuilder();
     });
 
-    [searchInput, tierFilter, costMinInput, costMaxInput, statusFilter].forEach((element) => {
+    selectedGrid.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action="remove-selected"]');
+      if (!button) return;
+      removeFighterFromSlot(Number(button.dataset.slotIndex));
+      refreshBuilder();
+    });
+
+    // Support radio filter pills & sync with hidden inputs for unit tests
+    document.querySelectorAll('input[name="fighter-tier-pill"]').forEach((radio) => {
+      radio.addEventListener('change', () => {
+        tierFilter.value = radio.value;
+        refreshBuilder();
+      });
+    });
+
+    document.querySelectorAll('input[name="fighter-status-pill"]').forEach((radio) => {
+      radio.addEventListener('change', () => {
+        statusFilter.value = radio.value;
+        refreshBuilder();
+      });
+    });
+
+    tierFilter.addEventListener('change', () => {
+      const radio = document.querySelector(`input[name="fighter-tier-pill"][value="${tierFilter.value}"]`);
+      if (radio) radio.checked = true;
+      refreshBuilder();
+    });
+
+    statusFilter.addEventListener('change', () => {
+      const radio = document.querySelector(`input[name="fighter-status-pill"][value="${statusFilter.value}"]`);
+      if (radio) radio.checked = true;
+      refreshBuilder();
+    });
+
+    [searchInput, costMinInput, costMaxInput].forEach((element) => {
       element.addEventListener('input', refreshBuilder);
-      element.addEventListener('change', refreshBuilder);
     });
 
     resetFiltersButton.addEventListener('click', clearFilters);
