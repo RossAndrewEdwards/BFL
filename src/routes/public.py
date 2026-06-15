@@ -90,6 +90,9 @@ def register_public_routes(app, deps):
             leaderboard_rows(conn),
             key=lambda row: (-(int(row.get("total_points") or 0)), row.get("name", "").lower(), row.get("id", 0)),
         )
+        for idx, row in enumerate(all_fighter_rows, start=1):
+            row["rank"] = idx
+
         all_team_rows = sorted(
             team_rows(conn),
             key=lambda row: (-(int(row.get("points") or 0)), row.get("team_name", "").lower(), row.get("id", 0)),

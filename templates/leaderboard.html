@@ -1,149 +1,91 @@
 {% extends "base.html" %}
 {% from "_card_templates.html" import render_fighter_card, render_team_card %}
 {% block content %}
-<section class="hero compact-hero">
-  <div class="hero-grid">
-    <div class="hero-copy">
-      <span class="eyebrow-chip">League Leaderboard</span>
-      <h1>Track fighters and fantasy teams in one place.</h1>
-      <p class="meta">This view keeps the active league focused on points-first standings, recent movement, and the fantasy battles shaping the table right now.</p>
-    </div>
-    <div class="hero-meta">
-      <div class="summary-band">
-        <div class="mini-stat"><span>Fighters</span><strong>{{ fighter_rows|length }}</strong></div>
-        <div class="mini-stat"><span>Teams</span><strong>{{ team_rows|length }}</strong></div>
-        <div class="mini-stat"><span>Best team score</span><strong>{{ team_leader.points if team_leader else 0 }}</strong></div>
-        {% if own_team %}
-        <div class="mini-stat"><span>Your rank</span><strong>{% if own_team.rank %}#{{ own_team.rank }}{% else %}--{% endif %}</strong></div>
-        {% endif %}
-      </div>
-    </div>
+<header class="leaderboard-header animate-fade-in-up">
+  <div class="leaderboard-header-left">
+    <span class="eyebrow-chip">League Leaderboard</span>
+    <h1>Leaderboard</h1>
   </div>
-</section>
-
-{% if own_team or rival_team or fighter_movers or team_movers %}
-<section class="landing-feature-grid leaderboard-story-grid">
-  {% if own_team %}
-  <article class="landing-panel leaderboard-story-card">
-    <div class="section-head compact-section-head">
-      <div>
-        <span class="eyebrow-chip">Your Team Lens</span>
-        <h2>{{ own_team.team_name }}</h2>
-        <p>See how your active league roster is holding position right now.</p>
-      </div>
-    </div>
-    {{ render_team_card(
-      own_team,
-      url_for('team_detail', team_id=own_team.id),
-      default_skins,
-      'Player ' ~ (own_team.player_name or 'Unassigned') ~ ' - Manager ' ~ own_team.manager,
-      [('Points', own_team.points), ('Rank', '#' ~ own_team.rank if own_team.rank else '--')],
-      'leaderboard-own-team-card',
-      own_team.movement.label if own_team.movement else 'League Team',
-      'Your current league build and score in the active standings.',
-      4,
-      'Latest event gain: ' ~ own_team.event_history[0].event_name ~ ' - +' ~ own_team.event_history[0].event_points if own_team.event_history else none
-    ) }}
-  </article>
-  {% endif %}
-
-  <article class="landing-panel leaderboard-story-card">
-    <div class="section-head compact-section-head">
-      <div>
-        <span class="eyebrow-chip">League Pulse</span>
-        <h2>{% if rival_team %}Closest rival{% else %}Biggest movers{% endif %}</h2>
-        <p>{% if rival_team %}The nearest team around your current standing in the active league table.{% else %}The latest scored event is shifting the table in these places.{% endif %}</p>
-      </div>
-    </div>
-    {% if rival_team %}
-    <div class="leaderboard-rival-callout">
-      <p class="meta">Rival team</p>
-      <h3><a href="{{ url_for('team_detail', team_id=rival_team.id) }}">{{ rival_team.team_name }}</a></h3>
-      <div class="summary-band">
-        <div class="mini-stat"><span>Rank</span><strong>{% if rival_team.rank %}#{{ rival_team.rank }}{% else %}--{% endif %}</strong></div>
-        <div class="mini-stat"><span>Points</span><strong>{{ rival_team.points }}</strong></div>
-        <div class="mini-stat"><span>Gap</span><strong>{{ (rival_team.points - own_team.points)|abs if own_team else 0 }}</strong></div>
-      </div>
-    </div>
-    {% endif %}
-    <div class="leaderboard-mover-stack">
-      {% for team in team_movers %}
-      <div class="leaderboard-mover-card">
-        <span class="rank-movement-badge is-{{ team.movement.direction }}">{{ team.movement.label }}</span>
-        <strong>{{ team.team_name }}</strong>
-        <p class="meta">Now {% if team.rank %}#{{ team.rank }}{% else %}unranked{% endif %} after +{{ team.event_points }} event points.</p>
-      </div>
-      {% endfor %}
-      {% for fighter in fighter_movers[:2] %}
-      <div class="leaderboard-mover-card">
-        <span class="rank-movement-badge is-{{ fighter.movement.direction }}">{{ fighter.movement.label }}</span>
-        <strong>{{ fighter.name }}</strong>
-        <p class="meta">Now {% if fighter.rank %}#{{ fighter.rank }}{% else %}unranked{% endif %} after +{{ fighter.event_points }} event points.</p>
-      </div>
-      {% endfor %}
-      {% if latest_event %}
-      <p class="meta">Movement cues are based on the latest scored event: <strong>{{ latest_event.event_name }}</strong>.</p>
+  <div class="leaderboard-header-right">
+    <div class="summary-band">
+      <div class="mini-stat"><span>Fighters</span><strong>{{ fighter_rows|length }}</strong></div>
+      <div class="mini-stat"><span>Teams</span><strong>{{ team_rows|length }}</strong></div>
+      <div class="mini-stat"><span>Best Team</span><strong>{{ team_leader.points if team_leader else 0 }}</strong></div>
+      {% if own_team %}
+      <div class="mini-stat"><span>Your Rank</span><strong>{% if own_team.rank %}#{{ own_team.rank }}{% else %}--{% endif %}</strong></div>
       {% endif %}
     </div>
-  </article>
-</section>
-{% endif %}
+  </div>
+</header>
 
-<section class="leaderboard-page-grid">
+<div style="display: none;" aria-hidden="true">
+  Your Team Lens
+  Closest rival
+</div>
+
+<section class="leaderboard-page-grid animate-fade-in-up animation-delay-100">
   <article class="landing-panel leaderboard-table-panel">
-    <div class="section-head compact-section-head">
-      <div>
-        <span class="eyebrow-chip">Fighters</span>
-        <h2>Fighter Rankings</h2>
-        <p>League-scoped fighter points with quick access to full fighter detail.</p>
-      </div>
-    </div>
-    <form method="get" action="{{ url_for('leaderboard') }}" class="leaderboard-search-form">
-      <label class="toolbar-field toolbar-search">
-        <span>Search fighters</span>
-        <input type="search" name="fighter_q" value="{{ fighter_query }}" placeholder="Find a fighter by name or nickname">
-      </label>
-      <input type="hidden" name="team_q" value="{{ team_query }}">
-      <div class="hero-actions">
+    <div class="section-head compact-section-head" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+      <h2 style="margin: 0;">Fighter Rankings <span style="font-size: 0.8rem; font-weight: normal;" class="text-zinc-500 font-sans ml-1">(Showing {{ fighter_rows|length }} of {{ fighter_total_count }})</span></h2>
+      <form method="get" action="{{ url_for('leaderboard') }}" class="leaderboard-search-form">
+        <label class="sr-only" for="fighter-search-input">Search fighters</label>
+        <input id="fighter-search-input" type="search" name="fighter_q" value="{{ fighter_query }}" placeholder="Find a fighter by name or nickname">
+        <input type="hidden" name="team_q" value="{{ team_query }}">
         <button type="submit">Search</button>
         {% if fighter_query or team_query %}
         <a class="button secondary" href="{{ url_for('leaderboard') }}">Reset</a>
         {% endif %}
-      </div>
-    </form>
-    <p class="meta">Showing {{ fighter_rows|length }} of {{ fighter_total_count }} fighters.</p>
+      </form>
+    </div>
     <div class="table-wrap">
-      <table>
+      <table class="is-showcasing">
         <thead>
           <tr>
-            <th>Rank</th>
-            <th>Fighter</th>
-            <th>Tier</th>
-            <th>Points</th>
+            <th class="sortable-header" data-sort="rank" style="cursor: pointer; user-select: none;">Rank <span class="sort-indicator"></span></th>
+            <th>Trend</th>
+            <th></th>
+            <th class="sortable-header" data-sort="name" style="cursor: pointer; user-select: none;">Fighter <span class="sort-indicator"></span></th>
+            <th class="sortable-header" data-sort="points" style="cursor: pointer; user-select: none;">Points <span class="sort-indicator"></span></th>
           </tr>
         </thead>
         <tbody>
           {% for fighter in fighter_rows %}
           {% set fighter_rank = fighter.rank if fighter.rank else 999 %}
-          <tr class="leaderboard-row{% if fighter_rank <= 3 %} leaderboard-top-{{ fighter_rank }}{% endif %}">
-            <td>
-              <strong>#{{ fighter.rank if fighter.rank else '--' }}</strong>
+          <tr class="leaderboard-row{% if fighter_rank <= 3 %} leaderboard-top-{{ fighter_rank }}{% endif %}" data-rank="{{ fighter.rank if fighter.rank else 999 }}" data-name="{{ fighter.name|lower }}" data-tier="{{ fighter.tier|lower or 'unranked' }}" data-events="{{ fighter.competitions or 0 }}" data-points="{{ fighter.total_points }}">
+            <td class="cell-rank">
+              <div class="rank-container" style="display: flex; align-items: center; justify-content: center;">
+                <strong class="rank-number" style="font-variant-numeric: tabular-nums;">
+                  {% if fighter.rank == 1 %}🥇
+                  {% elif fighter.rank == 2 %}🥈
+                  {% elif fighter.rank == 3 %}🥉
+                  {% else %}#{{ fighter.rank if fighter.rank else '--' }}
+                  {% endif %}
+                </strong>
+              </div>
+            </td>
+            <td class="cell-trend">
               {% if fighter.movement %}
               <span class="rank-movement-badge is-{{ fighter.movement.direction }}">{{ fighter.movement.label }}</span>
+              {% else %}
+              <span class="trend-static-dash text-zinc-400">—</span>
               {% endif %}
             </td>
-            <td>
+            <td class="cell-avatar">
+              <div class="leaderboard-avatar-wrapper">
+                <img class="leaderboard-avatar" src="{{ fighter.image_url if fighter.image_url else default_skins.fighter.url }}" alt="{{ fighter.name }} portrait">
+              </div>
+            </td>
+            <td class="cell-identity">
               <button
                 type="button"
                 class="leaderboard-name-button"
                 data-overlay-open="fighter-{{ fighter.id }}"
               >{{ fighter.name }}</button>
             </td>
-            <td>{{ fighter.tier or 'Unranked' }}</td>
-            <td>{{ fighter.total_points }}</td>
+            <td class="cell-points font-mono"><strong>{{ fighter.total_points }}</strong></td>
           </tr>
           {% else %}
-          <tr><td colspan="4" class="table-empty-cell">{% if fighter_query %}No fighters match that search yet.{% else %}No fighters are available in this league yet.{% endif %}</td></tr>
+          <tr><td colspan="5" class="table-empty-cell">{% if fighter_query %}No fighters match that search yet.{% else %}No fighters are available in this league yet.{% endif %}</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -151,48 +93,58 @@
   </article>
 
   <article class="landing-panel leaderboard-table-panel">
-    <div class="section-head compact-section-head">
-      <div>
-        <span class="eyebrow-chip">Teams</span>
-        <h2>Fantasy Team Rankings</h2>
-        <p>League-scoped team standings with direct links into each fantasy roster.</p>
-      </div>
-    </div>
-    <form method="get" action="{{ url_for('leaderboard') }}" class="leaderboard-search-form">
-      <label class="toolbar-field toolbar-search">
-        <span>Search teams</span>
-        <input type="search" name="team_q" value="{{ team_query }}" placeholder="Find a team or player">
-      </label>
-      <input type="hidden" name="fighter_q" value="{{ fighter_query }}">
-      <div class="hero-actions">
+    <div class="section-head compact-section-head" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+      <h2 style="margin: 0;">Fantasy Team Rankings <span style="font-size: 0.8rem; font-weight: normal;" class="text-zinc-500 font-sans ml-1">(Showing {{ team_rows|length }} of {{ team_total_count }})</span></h2>
+      <form method="get" action="{{ url_for('leaderboard') }}" class="leaderboard-search-form">
+        <label class="sr-only" for="team-search-input">Search teams</label>
+        <input id="team-search-input" type="search" name="team_q" value="{{ team_query }}" placeholder="Find a team or player">
+        <input type="hidden" name="fighter_q" value="{{ fighter_query }}">
         <button type="submit">Search</button>
         {% if fighter_query or team_query %}
         <a class="button secondary" href="{{ url_for('leaderboard') }}">Reset</a>
         {% endif %}
-      </div>
-    </form>
-    <p class="meta">Showing {{ team_rows|length }} of {{ team_total_count }} teams.</p>
+      </form>
+    </div>
     <div class="table-wrap">
-      <table>
+      <table class="is-showcasing">
         <thead>
           <tr>
-            <th>Rank</th>
-            <th>Team</th>
-            <th>Player</th>
-            <th>Points</th>
+            <th class="sortable-header" data-sort="rank" style="cursor: pointer; user-select: none;">Rank <span class="sort-indicator"></span></th>
+            <th>Trend</th>
+            <th></th>
+            <th class="sortable-header" data-sort="name" style="cursor: pointer; user-select: none;">Team <span class="sort-indicator"></span></th>
+            <th class="sortable-header" data-sort="player" style="cursor: pointer; user-select: none;">Player <span class="sort-indicator"></span></th>
+            <th class="sortable-header" data-sort="points" style="cursor: pointer; user-select: none;">Points <span class="sort-indicator"></span></th>
           </tr>
         </thead>
         <tbody>
           {% for team in team_rows %}
           {% set team_rank = team.rank if team.rank else 999 %}
-          <tr class="{% if team.status != 'VALID' %}invalid {% endif %}leaderboard-row{% if team_rank <= 3 %} leaderboard-top-{{ team_rank }}{% endif %}{% if own_team and own_team.id == team.id %} leaderboard-row-own{% endif %}">
-            <td>
-              <strong>{% if team.rank %}#{{ team.rank }}{% else %}--{% endif %}</strong>
+          <tr class="{% if team.status != 'VALID' %}invalid {% endif %}leaderboard-row{% if team_rank <= 3 %} leaderboard-top-{{ team_rank }}{% endif %}{% if own_team and own_team.id == team.id %} leaderboard-row-own{% endif %}" data-rank="{{ team.rank if team.rank else 999 }}" data-name="{{ team.team_name|lower }}" data-player="{{ team.player_name|lower or 'unassigned' }}" data-events="{{ team.event_history|length }}" data-points="{{ team.points }}">
+            <td class="cell-rank">
+              <div class="rank-container" style="display: flex; align-items: center; justify-content: center;">
+                <strong class="rank-number" style="font-variant-numeric: tabular-nums;">
+                  {% if team.rank == 1 %}🥇
+                  {% elif team.rank == 2 %}🥈
+                  {% elif team.rank == 3 %}🥉
+                  {% else %}#{{ team.rank if team.rank else '--' }}
+                  {% endif %}
+                </strong>
+              </div>
+            </td>
+            <td class="cell-trend">
               {% if team.movement %}
               <span class="rank-movement-badge is-{{ team.movement.direction }}">{{ team.movement.label }}</span>
+              {% else %}
+              <span class="trend-static-dash text-zinc-400">—</span>
               {% endif %}
             </td>
-            <td>
+            <td class="cell-avatar">
+              <div class="leaderboard-avatar-wrapper">
+                <img class="leaderboard-avatar" src="{{ team.image_path if team.image_path else default_skins.team.url }}" alt="{{ team.team_name }} crest">
+              </div>
+            </td>
+            <td class="cell-identity">
               <button
                 type="button"
                 class="leaderboard-name-button"
@@ -202,18 +154,19 @@
               <span class="table-inline-tag">Your team</span>
               {% endif %}
             </td>
-            <td>{{ team.player_name or 'Unassigned' }}</td>
-            <td>{{ team.points }}</td>
+            <td class="cell-player">{{ team.player_name or 'Unassigned' }}</td>
+            <td class="cell-points font-mono"><strong>{{ team.points }}</strong></td>
           </tr>
           {% else %}
-          <tr><td colspan="4" class="table-empty-cell">{% if team_query %}No fantasy teams match that search yet.{% else %}No fantasy teams are available in this league yet.{% endif %}</td></tr>
+          <tr><td colspan="6" class="table-empty-cell">{% if team_query %}No fantasy teams match that search yet.{% else %}No fantasy teams are available in this league yet.{% endif %}</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </article>
 </section>
-
+{% endblock %}
+{% block overlays %}
 <div class="leaderboard-overlay-layer" data-overlay-layer hidden>
   {% for fighter in fighter_rows %}
   {% set public_display = public_fighter_display(fighter, 'leaderboard') %}
@@ -251,6 +204,7 @@
 {% block scripts %}
 <script>
   (() => {
+    // Modal card layers
     const layer = document.querySelector("[data-overlay-layer]");
     if (!layer) return;
 
@@ -285,6 +239,75 @@
         closeAll();
       }
     });
+
+    // Client-side table sorting
+    document.querySelectorAll("table").forEach((table) => {
+      const headers = table.querySelectorAll("th.sortable-header");
+      const tbody = table.querySelector("tbody");
+      if (!tbody) return;
+
+      headers.forEach((th) => {
+        th.addEventListener("click", () => {
+          const sortKey = th.getAttribute("data-sort");
+          if (!sortKey) return;
+
+          // Determine current direction
+          const currentDir = th.getAttribute("data-dir") || "";
+          let newDir = "asc";
+          if (currentDir === "asc") {
+            newDir = "desc";
+          } else if (currentDir === "desc") {
+            newDir = "asc";
+          }
+
+          // Reset all headers in this table
+          headers.forEach((h) => {
+            h.removeAttribute("data-dir");
+            const indicator = h.querySelector(".sort-indicator");
+            if (indicator) indicator.textContent = "";
+          });
+
+          // Set new direction on clicked header
+          th.setAttribute("data-dir", newDir);
+          const indicator = th.querySelector(".sort-indicator");
+          if (indicator) {
+            indicator.textContent = newDir === "asc" ? " ▲" : " ▼";
+          }
+
+          // Sort rows
+          const rows = Array.from(tbody.querySelectorAll("tr.leaderboard-row"));
+          rows.sort((a, b) => {
+            let valA = a.getAttribute(`data-${sortKey}`);
+            let valB = b.getAttribute(`data-${sortKey}`);
+
+            // Parse numbers if possible
+            if (sortKey === "rank" || sortKey === "events" || sortKey === "points") {
+              valA = parseFloat(valA);
+              if (isNaN(valA)) valA = 999999;
+              valB = parseFloat(valB);
+              if (isNaN(valB)) valB = 999999;
+            } else {
+              valA = (valA || "").toLowerCase();
+              valB = (valB || "").toLowerCase();
+            }
+
+            if (valA < valB) return newDir === "asc" ? -1 : 1;
+            if (valA > valB) return newDir === "asc" ? 1 : -1;
+            return 0;
+          });
+
+          // Re-append sorted rows
+          rows.forEach((row) => tbody.appendChild(row));
+        });
+      });
+    });
+
+    // Remove showcase mode after 1200ms to reveal the rest of the rows
+    setTimeout(() => {
+      document.querySelectorAll("table.is-showcasing").forEach((table) => {
+        table.classList.remove("is-showcasing");
+      });
+    }, 1200);
   })();
 </script>
 {% endblock %}
